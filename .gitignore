@@ -64,6 +64,13 @@ extension/dist/
 ml/weights/
 ml/models/
 
+# Datasets and Processed Data
+/data/
+ml/data/processed/
+ml/data/raw/
+*.parquet
+*.arrow
+
 # Editor & OS files
 .vscode/
 .idea/
