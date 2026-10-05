@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AI Prompt-Injection and Data-Leak Firewall",
+  "version": "0.1.0",
+  "description": "Scans web pages for hidden prompt injections and prevents data leakage to AI tools.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Prompt Firewall"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

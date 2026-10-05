@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Prompt Firewall</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo-dot"></div>
+      <h1>Prompt Firewall</h1>
+    </header>
+    <div class="status-card">
+      <div class="status-indicator active"></div>
+      <div>
+        <div class="status-title">Protection Active</div>
+        <div class="status-sub">DOM scanner & outbound guard running</div>
+      </div>
+    </div>
+    <div id="content-status" class="content-status">
+      Ready to scan active tab.
+    </div>
+    <button id="scan-btn" class="scan-button">Scan Current Tab</button>
+  </div>
+  <script type="module" src="../../dist/popup/popup.js"></script>
+</body>
+</html>
