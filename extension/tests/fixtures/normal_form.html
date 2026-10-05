@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Benign Contact Form</title></head>
+<body>
+  <h1>Contact Customer Support</h1>
+  <form id="contact-form" action="/submit" method="POST">
+    <div>
+      <label for="name-input">Full Name:</label>
+      <input type="text" id="name-input" name="name" placeholder="John Doe" required />
+    </div>
+    <div>
+      <label for="email-input">Email Address:</label>
+      <input type="email" id="email-input" name="email" placeholder="john@example.com" required />
+    </div>
+    <div>
+      <label for="message-input">Message:</label>
+      <textarea id="message-input" name="message" rows="4" placeholder="How can we assist you?"></textarea>
+    </div>
+    <button type="submit" title="Submit feedback ticket">Send Message</button>
+  </form>
+</body>
+</html>

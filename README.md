@@ -61,7 +61,13 @@ The interactive API documentation will be available at `http://localhost:8000/do
 ### Chrome Extension (MV3 + TypeScript)
 ```bash
 cd extension
+# Install dependencies
 npm install
+
+# Run unit tests (JSDOM + Vitest)
+npm test
+
+# Build bundled content & popup scripts
 npm run build
 ```
 To load into Chrome:
