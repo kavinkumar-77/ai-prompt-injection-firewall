@@ -278,3 +278,37 @@ def test_disjoint_hard_negative_and_synthetic_templates() -> None:
     assert len(syn_intersection) == 0, (
         f"Found overlapping synthetic injection texts: {syn_intersection}"
     )
+
+
+def test_source_expected_kinds() -> None:
+    """Verifies that every source has the expected kind."""
+    import json
+    from pathlib import Path
+
+    expected_kinds = {
+        "deepset/prompt-injections": "direct",
+        "jackhhao/jailbreak-classification": "direct",
+        "hackaprompt/hackaprompt-dataset": "direct",
+        "microsoft/BIPIA": "indirect",
+        "synthetic_embedded_base_v1": "indirect",
+        "synthetic_embedded_injection_v1": "indirect",
+        "synthetic_hard_negatives_v1": "indirect",
+        "verified_permissive_docs_corpus": "indirect",
+        "verified_permissive_web_corpus": "indirect",
+    }
+
+    FIXTURE_PATH = Path("ml/tests/fixtures/sample_v1.jsonl")
+    if not FIXTURE_PATH.is_file():
+        return
+
+    with open(FIXTURE_PATH, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            source = record["source"]
+            kind = record["kind"]
+            if source in expected_kinds:
+                assert kind == expected_kinds[source], (
+                    f"Source {source} expected {expected_kinds[source]} but got {kind}"
+                )

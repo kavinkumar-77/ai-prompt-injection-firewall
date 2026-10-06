@@ -7,15 +7,20 @@
 The dataset provides balanced representations of direct jailbreaks and indirect prompt injections alongside diverse benign corpora, genre-matched clean background texts, and challenging hard negatives.
 
 ### Key Metrics
-- **Total Processed Samples**: 5,652 (after deduplication and quality filtering)
-- **Train Split**: 1,903 samples (804 positives, 1,099 negatives — balanced $\approx 1:1.36$)
-- **Validation Split**: 497 samples (28 positives, 469 negatives)
-- **Test Split**: 3,252 samples (1,291 positives, 1,961 negatives)
-  - **Negatives in Test**: 1,961 ($\ge 1,500$ requirement satisfied to reliably evaluate FPR $\le 1.0\%$)
+- **Total Processed Samples**: 8,275 (after deduplication and quality filtering)
+- **Train Split**: 1,658 samples (390 positives, 1,268 negatives)
+- **Validation Split**: 2,784 samples (449 positives, 2,335 negatives)
+- **Test Split**: 3,833 samples (1,291 positives, 2,542 negatives)
+  - **Negatives in Test**: 2,542 ($\ge 1,500$ requirement satisfied to reliably evaluate FPR $\le 1.0\%$)
 - **Primary Language**: English (`en`)
 - **Random Seed**: `42` (strictly reproducible across all splits and generators)
 
 ---
+
+
+### Important Notes
+- **Enron Contexts**: Enron email contexts have been replaced with purely synthetic business contexts, containing no real person names or original Enron text.
+- **Wikitext/SQuAD Contexts**: Wikitext and SQuAD contexts are licensed under CC BY-SA 4.0.
 
 ## 2. Split Breakdown & Class Distribution
 
@@ -87,7 +92,7 @@ The pipeline applies two stages of deduplication and quality inspection:
 
 Per specifications in [docs/EVALUATION.md](file:///c:/finalYearProject/docs/EVALUATION.md):
 - **False Positive Rate (FPR)** target: $\le 1.0\%$ at $\ge 90\%$ Recall on indirect injection benchmarks.
-- **Sample Count Requirement**: The test split contains **1,961** benign negative samples, providing statistical power to resolve a 1.0% FPR.
+- **Sample Count Requirement**: The test split contains **2,542** benign negative samples, providing statistical power to resolve a 1.0% FPR.
 - **Confidence Intervals**:
   - FPR must be reported with 95% **Wilson Score** or **Clopper-Pearson** confidence intervals.
   - In addition to aggregate FPR, reporting must be stratified:

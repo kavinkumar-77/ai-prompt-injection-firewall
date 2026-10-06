@@ -42,9 +42,9 @@ def run_pipeline(
     raw_records.extend(load_genre_matched_benign(total_count=2500, seed=seed))
 
     # 2. Add Hard Negatives (disjoint templates per split)
-    raw_records.extend(generate_hard_negatives_for_split("train", target_count=750, seed=seed))
-    raw_records.extend(generate_hard_negatives_for_split("val", target_count=250, seed=seed))
-    raw_records.extend(generate_hard_negatives_for_split("test", target_count=300, seed=seed))
+    raw_records.extend(generate_hard_negatives_for_split("train", target_count=1800, seed=seed))
+    raw_records.extend(generate_hard_negatives_for_split("val", target_count=600, seed=seed))
+    raw_records.extend(generate_hard_negatives_for_split("test", target_count=600, seed=seed))
 
     # 3. Add Synthetic Embedded Injections (paired groups, disjoint payloads)
     raw_records.extend(generate_synthetic_embedded_pairs("train", pair_count=300, seed=seed))
@@ -54,9 +54,9 @@ def run_pipeline(
     total_ingested = len(raw_records)
 
     # 4. Safe Deduplication (preserves paired group_id rows)
-    clean_records, exact_dupes_removed, near_dupes_removed = deduplicate_records(
-        raw_records, jaccard_threshold=0.88
-    )
+    clean_records, dedupe_report = deduplicate_records(raw_records, jaccard_threshold=0.88)
+    exact_dupes_removed = dedupe_report["exact_dupes_removed"]
+    near_dupes_removed = dedupe_report["near_dupes_removed"]
 
     # 5. Safety & PII Sanitization
     sanitized_records, pii_sanitized_count = validate_dataset_records(clean_records)
@@ -101,6 +101,10 @@ def run_pipeline(
             summary_stats["kinds"][k] = summary_stats["kinds"].get(k, 0) + 1
 
     summary_stats["families"] = sorted(list(summary_stats["families"]))
+    summary_stats["dedupe_report"] = dedupe_report
+    summary_stats["splits_raw"] = splits
+    summary_stats["dedupe_report"] = dedupe_report
+    summary_stats["splits_raw"] = splits
 
     # 8. Write a tiny sample fixture (18 rows: balanced train/val/test, pos/neg)
     sample_rows: list[dict[str, Any]] = []

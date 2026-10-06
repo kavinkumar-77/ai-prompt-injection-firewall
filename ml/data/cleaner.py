@@ -34,7 +34,7 @@ def _jaccard_similarity(s1: set[str], s2: set[str]) -> float:
 def deduplicate_records(
     records: list[dict[str, Any]],
     jaccard_threshold: float = 0.85,
-) -> tuple[list[dict[str, Any]], int, int]:
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Deduplicates records within label classes while preserving paired group members.
 
     Args:
@@ -43,10 +43,14 @@ def deduplicate_records(
             are deemed near-duplicates.
 
     Returns:
-        Tuple of (clean_records, exact_dupes_removed, near_dupes_removed).
+        Tuple of (clean_records, dedupe_report).
     """
-    exact_dupes_removed = 0
-    near_dupes_removed = 0
+    report = {
+        "exact_dupes_removed": 0,
+        "near_dupes_removed": 0,
+        "per_source": {},
+        "per_category": {},
+    }
 
     # Separate records by label to guarantee zero cross-label collision
     by_label: dict[int, list[dict[str, Any]]] = {0: [], 1: []}
@@ -63,19 +67,30 @@ def deduplicate_records(
 
         for r in group_records:
             text = r.get("text", "")
+
+            source = r.get("source", "unknown")
+            cat = r.get("attack_family", "unknown")
+
+            def add_stat(stat_type):
+                report[stat_type] += 1
+                report["per_source"].setdefault(source, {}).setdefault(stat_type, 0)
+                report["per_source"][source][stat_type] += 1
+                report["per_category"].setdefault(cat, {}).setdefault(stat_type, 0)
+                report["per_category"][cat][stat_type] += 1
+
             group_id = r.get("group_id", "")
             norm = _normalize_text(text)
             text_hash = hashlib.sha256(norm.encode("utf-8")).hexdigest()
 
             # 1. Exact deduplication within same label
             if text_hash in seen_exact_hashes:
-                exact_dupes_removed += 1
+                add_stat("exact_dupes_removed")
                 continue
 
             # If same group_id already has a row with the exact same label, skip
             group_key = f"{lbl}_{group_id}"
             if group_id and group_key in seen_groups:
-                exact_dupes_removed += 1
+                add_stat("exact_dupes_removed")
                 continue
 
             # 2. Near-duplicate check (MinHash/Jaccard) within same label
@@ -93,7 +108,7 @@ def deduplicate_records(
                     break
 
             if is_near_dup:
-                near_dupes_removed += 1
+                add_stat("near_dupes_removed")
                 continue
 
             # Record is unique: retain it
@@ -107,7 +122,7 @@ def deduplicate_records(
     retained_ids = {r["id"] for r in retained_records}
     ordered_clean = [r for r in records if r["id"] in retained_ids]
 
-    return ordered_clean, exact_dupes_removed, near_dupes_removed
+    return ordered_clean, report
 
 
 class DataCleaner:
@@ -116,15 +131,13 @@ class DataCleaner:
     def __init__(self, near_dedupe_threshold: float = 0.85) -> None:
         self.near_dedupe_threshold = near_dedupe_threshold
 
-    def clean(
-        self, records: list[dict[str, Any]]
-    ) -> tuple[list[dict[str, Any]], dict[str, int]]:
-        clean_recs, exact_cnt, near_cnt = deduplicate_records(
+    def clean(self, records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, int]]:
+        clean_recs, dedupe_report = deduplicate_records(
             records, jaccard_threshold=self.near_dedupe_threshold
         )
-        report = {
-            "exact_duplicates_removed": exact_cnt,
-            "near_duplicates_removed": near_cnt,
+        # Map keys for backward compatibility in DataCleaner
+        cleaner_report = {
+            "exact_duplicates_removed": dedupe_report["exact_dupes_removed"],
+            "near_duplicates_removed": dedupe_report["near_dupes_removed"],
         }
-        return clean_recs, report
-
+        return clean_recs, cleaner_report

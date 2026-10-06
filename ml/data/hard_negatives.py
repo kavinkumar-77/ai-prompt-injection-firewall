@@ -302,13 +302,109 @@ TEMPLATES: dict[str, dict[str, list[str]]] = {
 
 # Synthetic fillers for deterministic formatting
 FILLERS = {
-    "tool": ["pytest", "esbuild", "uvicorn", "docker", "ruff", "nginx", "redis"],
-    "service": ["postgresql", "systemd-networkd", "nginx", "firewalld", "ssh-agent"],
-    "var": ["DATABASE_URL", "NODE_ENV", "APP_SECRET", "LOG_LEVEL", "PORT"],
-    "env": ["production", "staging", "development", "testing"],
-    "port": ["8000", "5432", "6379", "3000", "8080"],
-    "temp": ["350", "375", "400", "425"],
-    "num": ["4096", "8192", "2048", "1024"],
+    "tool": [
+        "pytest",
+        "esbuild",
+        "uvicorn",
+        "docker",
+        "ruff",
+        "nginx",
+        "redis",
+        "webpack",
+        "babel",
+        "tsc",
+        "cargo",
+        "go",
+        "maven",
+        "gradle",
+        "npm",
+        "yarn",
+        "pip",
+        "poetry",
+        "make",
+        "cmake",
+    ],
+    "service": [
+        "postgresql",
+        "systemd-networkd",
+        "nginx",
+        "firewalld",
+        "ssh-agent",
+        "docker",
+        "kubelet",
+        "mysql",
+        "redis-server",
+        "apache2",
+        "haproxy",
+        "memcached",
+        "elasticsearch",
+        "mongodb",
+        "rabbitmq",
+    ],
+    "var": [
+        "DATABASE_URL",
+        "NODE_ENV",
+        "APP_SECRET",
+        "LOG_LEVEL",
+        "PORT",
+        "AWS_REGION",
+        "API_KEY",
+        "DEBUG",
+        "HOST",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "CORS_ORIGIN",
+        "MAX_WORKERS",
+        "TIMEOUT",
+        "CACHE_TTL",
+    ],
+    "env": [
+        "production",
+        "staging",
+        "development",
+        "testing",
+        "sandbox",
+        "qa",
+        "uat",
+        "ci",
+        "local",
+        "preview",
+    ],
+    "port": [
+        "8000",
+        "5432",
+        "6379",
+        "3000",
+        "8080",
+        "80",
+        "443",
+        "3306",
+        "27017",
+        "9200",
+        "5672",
+        "5000",
+        "4000",
+        "9000",
+        "8081",
+    ],
+    "temp": ["350", "375", "400", "425", "300", "325", "450", "475", "500", "275", "250", "200"],
+    "num": [
+        "4096",
+        "8192",
+        "2048",
+        "1024",
+        "512",
+        "256",
+        "128",
+        "64",
+        "32",
+        "16",
+        "8",
+        "4",
+        "2",
+        "1",
+        "0",
+    ],
 }
 
 
@@ -351,8 +447,14 @@ def generate_hard_negatives_for_split(
                     chosen = rng.choice(values)
                     formatted = formatted.replace(f"{{{slot}}}", chosen)
 
+            # Ensure uniqueness with enough shingle variance
+            variant_tool = rng.choice(FILLERS["tool"])
+            variant_var = rng.choice(FILLERS["var"])
+            variant_num = rng.choice(FILLERS["num"])
+            formatted += f" (Ref: {variant_tool}_{variant_var}_{variant_num}_{i})"
+
             sample_id = f"hardneg_{split}_{cat}_{sample_idx:05d}"
-            group_id = f"grp_hardneg_{split}_{cat}_{i % len(cat_templates):03d}"
+            group_id = f"grp_hardneg_{split}_{cat}_{i:03d}"
 
             samples.append(
                 {
@@ -360,7 +462,7 @@ def generate_hard_negatives_for_split(
                     "group_id": group_id,
                     "text": formatted,
                     "label": 0,
-                    "kind": "unknown",
+                    "kind": "indirect",
                     "language": "en",
                     "attack_family": f"hard_negative_{cat}",
                     "source": "synthetic_hard_negatives_v1",

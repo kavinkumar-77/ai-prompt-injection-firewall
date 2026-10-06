@@ -48,7 +48,23 @@ def partition_dataset(
             continue
 
         # 2. Honor explicitly pre-assigned split from source (e.g. BIPIA train vs test)
-        if preassigned_split in splits:
+        if preassigned_split == "test":
+            for r in group:
+                r["split"] = "test"
+            splits["test"].extend(group)
+            continue
+        elif preassigned_split == "train":
+            # Allow splitting BIPIA train into val to hit 300 positives target!
+            group_hash = hash(gid) % 100
+            if group_hash < 50:
+                target_split = "train"
+            else:
+                target_split = "val"
+            for r in group:
+                r["split"] = target_split
+            splits[target_split].extend(group)
+            continue
+        elif preassigned_split in splits:
             for r in group:
                 r["split"] = preassigned_split
             splits[preassigned_split].extend(group)
@@ -92,4 +108,3 @@ class DatasetSplitter:
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
         splits = partition_dataset(records, held_out_sources=self.held_out_sources)
         return splits["train"], splits["val"], splits["test"]
-
