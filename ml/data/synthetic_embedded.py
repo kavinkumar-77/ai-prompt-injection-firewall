@@ -86,7 +86,8 @@ def generate_synthetic_embedded_pairs(
       2. An injected row (label=1, group_id=doc_X)
     Uses disjoint payload sets for train vs test/val.
     """
-    rng = random.Random(seed + (hash(split) % 5000))
+import hashlib
+    rng = random.Random(seed + (int(hashlib.sha256(split.encode()).hexdigest(), 16) % 5000))
     payload_pool = TRAIN_PAYLOADS if split == "train" else TEST_PAYLOADS
 
     records: list[dict[str, Any]] = []

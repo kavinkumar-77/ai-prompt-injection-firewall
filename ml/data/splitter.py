@@ -95,8 +95,8 @@ def partition_dataset(
     rng = random.Random(42)
 
     train_pos = [r for r in splits["train"] if r["label"] == 1]
-    train_neg_hard = [r for r in splits["train"] if r["label"] == 0 and "hard_negative" in r["attack_family"]]
-    train_neg_other = [r for r in splits["train"] if r["label"] == 0 and "hard_negative" not in r["attack_family"]]
+    train_neg_hard = [r for r in splits["train"] if r["label"] == 0 and "hard_negative" in r.get("attack_family", "")]
+    train_neg_other = [r for r in splits["train"] if r["label"] == 0 and "hard_negative" not in r.get("attack_family", "")]
 
     target_train_hard = int((0.3 / 0.7) * len(train_neg_other))
     if len(train_neg_hard) > target_train_hard:
@@ -105,8 +105,8 @@ def partition_dataset(
     splits["train"] = train_pos + train_neg_other + train_neg_hard
 
     val_pos = [r for r in splits["val"] if r["label"] == 1]
-    val_neg_hard = [r for r in splits["val"] if r["label"] == 0 and "hard_negative" in r["attack_family"]]
-    val_neg_other = [r for r in splits["val"] if r["label"] == 0 and "hard_negative" not in r["attack_family"]]
+    val_neg_hard = [r for r in splits["val"] if r["label"] == 0 and "hard_negative" in r.get("attack_family", "")]
+    val_neg_other = [r for r in splits["val"] if r["label"] == 0 and "hard_negative" not in r.get("attack_family", "")]
 
     rng.shuffle(val_pos)
     rng.shuffle(val_neg_hard)
@@ -118,8 +118,8 @@ def partition_dataset(
     splits["val"] = val_pos + val_neg_hard + val_neg_other
 
     test_pos = [r for r in splits["test"] if r["label"] == 1]
-    test_neg_hard = [r for r in splits["test"] if r["label"] == 0 and "hard_negative" in r["attack_family"]]
-    test_neg_other = [r for r in splits["test"] if r["label"] == 0 and "hard_negative" not in r["attack_family"]]
+    test_neg_hard = [r for r in splits["test"] if r["label"] == 0 and "hard_negative" in r.get("attack_family", "")]
+    test_neg_other = [r for r in splits["test"] if r["label"] == 0 and "hard_negative" not in r.get("attack_family", "")]
 
     target_test_hard = int((0.3 / 0.7) * len(test_neg_other))
     if len(test_neg_hard) > target_test_hard:

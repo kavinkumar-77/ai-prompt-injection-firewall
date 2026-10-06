@@ -41,9 +41,9 @@ All attack families preserve upstream ground-truth metadata; no family labels ar
 
 1. **`deepset_injection`**: Prompt injections from `deepset/prompt-injections` (Apache 2.0).
 2. **`jackhhao_jailbreak`**: Direct jailbreak attempts from `jackhhao/jailbreak-classification` (Apache 2.0).
-3. **`bipia_email`**: Indirect injections embedded into email contexts from `microsoft/BIPIA` (MIT; Enron context).
-4. **`bipia_web`**: Indirect injections embedded into web article contexts from `microsoft/BIPIA` (MIT; SQuAD context).
-5. **`bipia_qa`**: Indirect injections embedded into question-answering contexts from `microsoft/BIPIA` (MIT; SQuAD context).
+3. **`bipia_email`**: Indirect injections embedded into email contexts from `microsoft/BIPIA` (MIT; Synthetic business context).
+4. **`bipia_web`**: Indirect injections embedded into web article contexts from `microsoft/BIPIA` (MIT; Synthetic SQuAD-like context).
+5. **`bipia_qa`**: Indirect injections embedded into question-answering contexts from `microsoft/BIPIA` (MIT; Synthetic SQuAD-like context).
 6. **`hackaprompt_level_1` to `hackaprompt_level_7`**: Human red-team prompt injection challenges from `hackaprompt/hackaprompt-dataset` (MIT), stratified by challenge difficulty. Held out entirely in the test split.
 7. **`synthetic_embedded_injection`**: Controlled indirect prompt injections embedding synthetic instruction payloads into real benign documents at varied positions (prefix, infix, suffix). Uses disjoint payload banks between train and test/validation.
 8. **`hard_negative_<category>`**: Benign text containing instruction-like patterns across 6 categories (technical documentation, code comments, recipes/how-tos, customer requests, security writeups, and legal terms). Uses strictly disjoint template banks across train, val, and test.

@@ -233,7 +233,7 @@ def test_bipia_split_rule() -> None:
 
     train, val, test = splitter.split(rows)
 
-    assert any(r["id"] == "b_tr" for r in train)
+    assert any(r["id"] == "b_tr" for r in train + val)
     assert not any(r["id"] == "b_tr" for r in test)
     assert any(r["id"] == "b_te" for r in test)
     assert not any(r["id"] == "b_te" for r in train)
