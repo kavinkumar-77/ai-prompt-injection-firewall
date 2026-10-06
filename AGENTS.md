@@ -42,3 +42,14 @@ These guidelines define operational, architectural, and security boundaries when
 10. **Dataset and Model Weight Isolation**:
     - Raw datasets, annotated corpuses, and model weight checkpoints (`*.bin`, `*.pt`, `*.onnx`, `*.safetensors`, `*.pkl`) must stay out of Git.
     - Ensure `.gitignore` rules prevent accidental commits of large binary files or datasets.
+
+## Integrity and quality gates
+
+1. Never label generated or hand-written data with the name of a real dataset. Rows whose source is a real dataset must come from files in data/raw/ recorded in data/raw/MANIFEST.json (with sha256). Generated data must use a source name starting with "synthetic_" and be described as synthetic.
+2. Never hardcode metrics or results in code or docs. Every number in docs or reports must be produced by a script in ml/eval/ that writes results/*.json, and docs must be generated from those files.
+3. Never weaken, skip or delete a test to make it pass. If a test is wrong, explain why and ask me.
+4. Never use git push --force, --amend or `git add .`. Add named files and run `git status` before each commit. If a network call fails twice, stop and report instead of retrying or switching approach.
+5. Anything not fully implemented must be named placeholder_* and listed in docs/STATUS.md. Keep docs/STATUS.md updated after every task: what works, what is a placeholder, what is missing, what is measured. Be honest.
+6. Before declaring a task done: run ruff and pytest, plus the audit scripts that apply, and paste a short summary.
+7. Add a test that no record with a real-dataset source name exists without a matching entry in the manifest.
+8. Do not write throwaway regex-patch scripts; edit files directly.
