@@ -87,6 +87,7 @@ def generate_synthetic_embedded_pairs(
     Uses disjoint payload sets for train vs test/val.
     """
     import hashlib
+
     rng = random.Random(seed + (int(hashlib.sha256(split.encode()).hexdigest(), 16) % 5000))
     payload_pool = TRAIN_PAYLOADS if split == "train" else TEST_PAYLOADS
 

@@ -1,0 +1,34 @@
+{
+  "deepset/prompt-injections": {
+    "dataset_id": "deepset/prompt-injections",
+    "revision": "main",
+    "license": "Apache-2.0",
+    "row_count": 662,
+    "columns": "text, label",
+    "sha256": "39ac797cabc157eeed58435a08593b2952bb6cb16fc394a2d383f447cc7b246e"
+  },
+  "jackhhao/jailbreak-classification": {
+    "dataset_id": "jackhhao/jailbreak-classification",
+    "revision": "main",
+    "license": "Apache-2.0",
+    "row_count": 6614,
+    "columns": "prompt, type",
+    "sha256": "9f3c4ef27a58287738b2517c6cd138c16ea1bf87cb00a1c2daf502df85799561"
+  },
+  "OpenAssistant/oasst1": {
+    "dataset_id": "OpenAssistant/oasst1",
+    "revision": "main",
+    "license": "Apache-2.0",
+    "row_count": 88838,
+    "columns": "message_id, parent_id, user_id, created_date, text, role, lang, review_count, review_result, deleted, rank, synthetic, model_name, detoxify, message_tree_id, tree_state, emojis, labels",
+    "sha256": "bbfadf5ed1278ba2208c837fdcad865adf65f5df55d80abadab2745db13fcb5e"
+  },
+  "microsoft/BIPIA": {
+    "dataset_id": "microsoft/BIPIA",
+    "revision": "main",
+    "license": "MIT",
+    "row_count": "N/A",
+    "columns": "N/A",
+    "sha256": "74da474c48ca75cff59ca35fa5bd179a57fa2a00a3838baf7d05460c1ead5264"
+  }
+}

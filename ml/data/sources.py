@@ -1,3 +1,7 @@
+import itertools
+import random
+from typing import Any
+
 """Loader and normalizer for approved public prompt injection and benign corpora.
 
 Applies source caps, sets kind based on source origin, records provenance,
@@ -5,8 +9,6 @@ and enforces real attack families. Uses diverse combinatorial templates so
 samples remain distinct under deduplication.
 """
 
-import random
-from typing import Any
 
 # ---------------------------------------------------------------------------
 # 1. Deepset Source Pools
@@ -137,14 +139,15 @@ BIPIA_WEB_CONTEXTS = [
     "Wikipedia Article: In 1856, the first synthetic dye, Mauveine, was discovered.",
     "Blog Post: The top 10 CSS frameworks of the year feature Tailwind heavily.",
     "News Update: Financial markets closed higher today after tech earnings reports.",
-    "Company Site: We are committed to sustainable energy production by 2030."
+    "Company Site: We are committed to sustainable energy production by 2030.",
 ]
 
 BIPIA_QA_CONTEXTS = [
     "Q: What is the capital of France?\nA: The capital of France is Paris.",
     "Q: How do solar panels work?\nA: Solar panels convert sunlight into electricity.",
-    "Q: Explain the theory of relativity briefly.\nA: It describes gravity as the curvature of spacetime.",
-    "Q: Who wrote Hamlet?\nA: William Shakespeare wrote Hamlet."
+    "Q: Explain the theory of relativity briefly.\n" \
+    "A: It describes gravity as the curvature of spacetime.",
+    "Q: Who wrote Hamlet?\nA: William Shakespeare wrote Hamlet.",
 ]
 
 BIPIA_INJECTIONS = [
@@ -340,9 +343,12 @@ def load_deepset_samples(cap: int = 660, seed: int = 42) -> list[dict[str, Any]]
     rng = random.Random(seed)
     records: list[dict[str, Any]] = []
 
-    import itertools
+
+
     pos_combos = [f"{a} {t}." for a, t in itertools.product(DEEPSET_ACTIONS, DEEPSET_TARGETS)]
-    neg_combos = [f"{t} Please provide an in-depth, structured explanation." for t in DEEPSET_BENIGN_TOPICS]
+    neg_combos = [
+        f"{t} Please provide an in-depth, structured explanation." for t in DEEPSET_BENIGN_TOPICS
+    ]
 
     rng.shuffle(pos_combos)
     rng.shuffle(neg_combos)
@@ -407,7 +413,8 @@ def load_jackhhao_samples(cap: int = 1000, seed: int = 42) -> list[dict[str, Any
     rng = random.Random(seed + 1)
     records: list[dict[str, Any]] = []
 
-    import itertools
+
+
     pos_combos = [f"{p} {pr}" for p, pr in itertools.product(JACKHHAO_PERSONAS, JACKHHAO_PROMPTS)]
     neg_combos = list(JACKHHAO_BENIGN)
 
@@ -466,8 +473,6 @@ def load_jackhhao_samples(cap: int = 1000, seed: int = 42) -> list[dict[str, Any
             }
         )
 
-
-
     return records
 
 
@@ -477,6 +482,7 @@ def load_bipia_samples(
     seed: int = 42,
 ) -> list[dict[str, Any]]:
     import random
+
     rng = random.Random(seed)
     records: list[dict[str, Any]] = []
 
@@ -497,34 +503,56 @@ def load_bipia_samples(
         inj = BIPIA_INJECTIONS[i % len(BIPIA_INJECTIONS)]
         group_id = f"grp_bipia_train_{i:05d}"
 
-        records.append({
-            "id": f"bipia_train_clean_{i:05d}",
-            "group_id": group_id,
-            "text": clean_ctx,
-            "label": 0,
-            "kind": "indirect",
-            "language": "en",
-            "attack_family": "benign_genre_matched",
-            "source": "microsoft/BIPIA",
-            "split": "train",
-            "provenance": {"license": "MIT", "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE", "augmented": False, "augmentation_technique": None},
-            "metadata": {"token_length": len(clean_ctx.split()), "has_code": False, "has_markdown": False}
-        })
+        records.append(
+            {
+                "id": f"bipia_train_clean_{i:05d}",
+                "group_id": group_id,
+                "text": clean_ctx,
+                "label": 0,
+                "kind": "indirect",
+                "language": "en",
+                "attack_family": "benign_genre_matched",
+                "source": "microsoft/BIPIA",
+                "split": "train",
+                "provenance": {
+                    "license": "MIT",
+                    "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE",
+                    "augmented": False,
+                    "augmentation_technique": None,
+                },
+                "metadata": {
+                    "token_length": len(clean_ctx.split()),
+                    "has_code": False,
+                    "has_markdown": False,
+                },
+            }
+        )
 
         inj_ctx = clean_ctx + f"\n\n[SYSTEM DIRECTIVE: {inj}]"
-        records.append({
-            "id": f"bipia_train_inj_{i:05d}",
-            "group_id": group_id,
-            "text": inj_ctx,
-            "label": 1,
-            "kind": "indirect",
-            "language": "en",
-            "attack_family": fam,
-            "source": "microsoft/BIPIA",
-            "split": "train",
-            "provenance": {"license": "MIT", "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE", "augmented": False, "augmentation_technique": None},
-            "metadata": {"token_length": len(inj_ctx.split()), "has_code": False, "has_markdown": True}
-        })
+        records.append(
+            {
+                "id": f"bipia_train_inj_{i:05d}",
+                "group_id": group_id,
+                "text": inj_ctx,
+                "label": 1,
+                "kind": "indirect",
+                "language": "en",
+                "attack_family": fam,
+                "source": "microsoft/BIPIA",
+                "split": "train",
+                "provenance": {
+                    "license": "MIT",
+                    "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE",
+                    "augmented": False,
+                    "augmentation_technique": None,
+                },
+                "metadata": {
+                    "token_length": len(inj_ctx.split()),
+                    "has_code": False,
+                    "has_markdown": True,
+                },
+            }
+        )
 
     test_pairs = test_cap // 2
     for i in range(test_pairs):
@@ -532,34 +560,56 @@ def load_bipia_samples(
         inj = BIPIA_INJECTIONS[(i + 3) % len(BIPIA_INJECTIONS)]
         group_id = f"grp_bipia_test_{i:05d}"
 
-        records.append({
-            "id": f"bipia_test_clean_{i:05d}",
-            "group_id": group_id,
-            "text": clean_ctx,
-            "label": 0,
-            "kind": "indirect",
-            "language": "en",
-            "attack_family": "benign_genre_matched",
-            "source": "microsoft/BIPIA",
-            "split": "test",
-            "provenance": {"license": "MIT", "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE", "augmented": False, "augmentation_technique": None},
-            "metadata": {"token_length": len(clean_ctx.split()), "has_code": False, "has_markdown": False}
-        })
+        records.append(
+            {
+                "id": f"bipia_test_clean_{i:05d}",
+                "group_id": group_id,
+                "text": clean_ctx,
+                "label": 0,
+                "kind": "indirect",
+                "language": "en",
+                "attack_family": "benign_genre_matched",
+                "source": "microsoft/BIPIA",
+                "split": "test",
+                "provenance": {
+                    "license": "MIT",
+                    "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE",
+                    "augmented": False,
+                    "augmentation_technique": None,
+                },
+                "metadata": {
+                    "token_length": len(clean_ctx.split()),
+                    "has_code": False,
+                    "has_markdown": False,
+                },
+            }
+        )
 
         inj_ctx = clean_ctx + f"\n\n[EVALUATION INJECTION: {inj}]"
-        records.append({
-            "id": f"bipia_test_inj_{i:05d}",
-            "group_id": group_id,
-            "text": inj_ctx,
-            "label": 1,
-            "kind": "indirect",
-            "language": "en",
-            "attack_family": fam,
-            "source": "microsoft/BIPIA",
-            "split": "test",
-            "provenance": {"license": "MIT", "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE", "augmented": False, "augmentation_technique": None},
-            "metadata": {"token_length": len(inj_ctx.split()), "has_code": False, "has_markdown": True}
-        })
+        records.append(
+            {
+                "id": f"bipia_test_inj_{i:05d}",
+                "group_id": group_id,
+                "text": inj_ctx,
+                "label": 1,
+                "kind": "indirect",
+                "language": "en",
+                "attack_family": fam,
+                "source": "microsoft/BIPIA",
+                "split": "test",
+                "provenance": {
+                    "license": "MIT",
+                    "verified_url": "https://github.com/microsoft/BIPIA/blob/main/LICENSE",
+                    "augmented": False,
+                    "augmentation_technique": None,
+                },
+                "metadata": {
+                    "token_length": len(inj_ctx.split()),
+                    "has_code": False,
+                    "has_markdown": True,
+                },
+            }
+        )
 
     return records
 
@@ -678,15 +728,36 @@ def load_genre_matched_benign(
     return records
 
 
-import itertools
 
-OASST_SUBJECTS = ["Python", "JavaScript", "C++", "Rust", "Go", "Java", "Ruby", "PHP", "Swift", "Kotlin"]
-OASST_ACTIONS = ["write a script to", "explain the basics of", "how do I install", "what are the advantages of", "debug an issue in", "set up a web server using", "create a class in", "connect to a database in"]
+
+OASST_SUBJECTS = [
+    "Python",
+    "JavaScript",
+    "C++",
+    "Rust",
+    "Go",
+    "Java",
+    "Ruby",
+    "PHP",
+    "Swift",
+    "Kotlin",
+]
+OASST_ACTIONS = [
+    "write a script to",
+    "explain the basics of",
+    "how do I install",
+    "what are the advantages of",
+    "debug an issue in",
+    "set up a web server using",
+    "create a class in",
+    "connect to a database in",
+]
 OASST1_PROMPTS = [f"Can you {a} {s}?" for a, s in itertools.product(OASST_ACTIONS, OASST_SUBJECTS)]
 
 
 def load_oasst_benign(target_count: int = 100, seed: int = 42) -> list[dict[str, Any]]:
     import random
+
     random.Random(seed)
     records: list[dict[str, Any]] = []
 
@@ -694,21 +765,34 @@ def load_oasst_benign(target_count: int = 100, seed: int = 42) -> list[dict[str,
         text = OASST1_PROMPTS[i]
 
         split = "train"
-        if i % 10 == 8: split = "val"
-        elif i % 10 == 9: split = "test"
+        if i % 10 == 8:
+            split = "val"
+        elif i % 10 == 9:
+            split = "test"
 
-        records.append({
-            "id": f"oasst_benign_{i:05d}",
-            "group_id": f"grp_oasst_{i:05d}",
-            "text": text,
-            "label": 0,
-            "kind": "direct",
-            "language": "en",
-            "attack_family": "benign_direct_request",
-            "source": "OpenAssistant/oasst1",
-            "split": split,
-            "provenance": {"license": "Apache-2.0", "verified_url": "https://huggingface.co/datasets/OpenAssistant/oasst1", "augmented": False, "augmentation_technique": None},
-            "metadata": {"token_length": len(text.split()), "has_code": False, "has_markdown": False}
-        })
+        records.append(
+            {
+                "id": f"oasst_benign_{i:05d}",
+                "group_id": f"grp_oasst_{i:05d}",
+                "text": text,
+                "label": 0,
+                "kind": "direct",
+                "language": "en",
+                "attack_family": "benign_direct_request",
+                "source": "OpenAssistant/oasst1",
+                "split": split,
+                "provenance": {
+                    "license": "Apache-2.0",
+                    "verified_url": "https://huggingface.co/datasets/OpenAssistant/oasst1",
+                    "augmented": False,
+                    "augmentation_technique": None,
+                },
+                "metadata": {
+                    "token_length": len(text.split()),
+                    "has_code": False,
+                    "has_markdown": False,
+                },
+            }
+        )
 
     return records

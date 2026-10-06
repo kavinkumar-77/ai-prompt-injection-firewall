@@ -71,7 +71,7 @@ def deduplicate_records(
             source = r.get("source", "unknown")
             cat = r.get("attack_family", "unknown")
 
-            def add_stat(stat_type):
+            def add_stat(stat_type, source=source, cat=cat):
                 report[stat_type] += 1
                 report["per_source"].setdefault(source, {}).setdefault(stat_type, 0)
                 report["per_source"][source][stat_type] += 1

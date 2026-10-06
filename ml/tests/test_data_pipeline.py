@@ -324,24 +324,26 @@ def test_pipeline_hash_stability():
         h = hashlib.sha256()
         for root, _dirs, files in os.walk(dirname):
             for f in sorted(files):
-                if f.endswith('.jsonl'):
-                    with open(os.path.join(root, f), 'rb') as file:
+                if f.endswith(".jsonl"):
+                    with open(os.path.join(root, f), "rb") as file:
                         h.update(file.read())
         return h.hexdigest()
 
     # Need to isolate output dirs to compare properly or run sequentially
 
     env1 = os.environ.copy()
-    env1['PYTHONHASHSEED'] = '1'
-    subprocess.run([sys.executable, '-m', 'ml.data.pipeline'], env=env1, check=True)
-    hash1 = get_dir_hash('data/processed')
+    env1["PYTHONHASHSEED"] = "1"
+    subprocess.run([sys.executable, "-m", "ml.data.pipeline"], env=env1, check=True)
+    hash1 = get_dir_hash("data/processed")
 
     env2 = os.environ.copy()
-    env2['PYTHONHASHSEED'] = '2'
-    subprocess.run([sys.executable, '-m', 'ml.data.pipeline'], env=env2, check=True)
-    hash2 = get_dir_hash('data/processed')
+    env2["PYTHONHASHSEED"] = "2"
+    subprocess.run([sys.executable, "-m", "ml.data.pipeline"], env=env2, check=True)
+    hash2 = get_dir_hash("data/processed")
 
-    assert hash1 == hash2, "Pipeline output is not deterministic across different PYTHONHASHSEED values!"
+    assert hash1 == hash2, (
+        "Pipeline output is not deterministic across different PYTHONHASHSEED values!"
+    )
 
 
 def test_dataset_card_matches_stats():
@@ -358,15 +360,18 @@ def test_dataset_card_matches_stats():
     card_path = Path("ml/data/DATASET_CARD.md")
     content = card_path.read_text(encoding="utf-8")
 
-    match = re.search(r'\*\*Total Processed Samples\*\*: ([\d,]+)', content)
+    match = re.search(r"\*\*Total Processed Samples\*\*: ([\d,]+)", content)
     assert match is not None
 
-    card_total = int(match.group(1).replace(',', ''))
-    assert card_total == total_rows, f"Card total {card_total} does not match pipeline total {total_rows}. Run make_card.py!"
+    card_total = int(match.group(1).replace(",", ""))
+    assert card_total == total_rows, (
+        f"Card total {card_total} does not match pipeline total {total_rows}. Run make_card.py!"
+    )
 
 
 def test_no_unmanifested_real_sources() -> None:
-    """Verifies that no record with a real dataset source name exists without a matching entry in the manifest."""
+    """Verifies that no record with a real dataset source name exists
+    without a matching entry in the manifest."""
     import json
     from pathlib import Path
 
@@ -376,7 +381,7 @@ def test_no_unmanifested_real_sources() -> None:
 
     manifest_path = Path("data/raw/MANIFEST.json")
     if manifest_path.is_file():
-        with open(manifest_path, 'r', encoding='utf-8') as f:
+        with open(manifest_path, encoding="utf-8") as f:
             manifest = json.load(f)
     else:
         manifest = {}
@@ -387,9 +392,10 @@ def test_no_unmanifested_real_sources() -> None:
                 continue
             record = json.loads(line)
             source = record.get("source", "")
-            
+
             # If it's not synthetic, it must be in the manifest
             if not source.startswith("synthetic_"):
                 assert source in manifest, (
-                    f"Record uses real dataset source '{source}' but it is not found in data/raw/MANIFEST.json!"
+                    f"Record uses real dataset source '{source}' " \
+                    "but it is not found in data/raw/MANIFEST.json!"
                 )

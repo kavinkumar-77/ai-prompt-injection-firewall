@@ -1,4 +1,5 @@
 import hashlib
+from typing import Any
 
 """Deterministic, template-based hard-negative sample generation.
 
@@ -7,7 +8,6 @@ compiler pragmas, or security terminology without any real personal data or LLM 
 Templates are strictly disjoint across train, val, and test splits.
 """
 
-from typing import Any
 
 # Disjoint template repositories partitioned by category and split
 TEMPLATES: dict[str, dict[str, list[str]]] = {
