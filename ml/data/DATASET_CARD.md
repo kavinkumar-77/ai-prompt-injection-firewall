@@ -7,10 +7,10 @@
 The dataset provides balanced representations of direct jailbreaks and indirect prompt injections alongside diverse benign corpora, genre-matched clean background texts, and challenging hard negatives.
 
 ### Key Metrics
-- **Total Processed Samples**: 9,971 (after deduplication and quality filtering)
+- **Total Processed Samples**: 9,972 (after deduplication and quality filtering)
 - **Train Split**: 5,380 samples (1,350 positives, 4,030 negatives)
 - **Validation Split**: 750 samples (350 positives, 400 negatives)
-- **Test Split**: 3,841 samples (1,291 positives, 2,550 negatives)
+- **Test Split**: 3,842 samples (1,292 positives, 2,550 negatives)
   - **Negatives in Test**: 2,550 ($\ge 1,500$ requirement satisfied to reliably evaluate FPR $\le 1.0\%$)
 - **Primary Language**: English (`en`)
 - **Random Seed**: `42` (strictly reproducible across all splits and generators)

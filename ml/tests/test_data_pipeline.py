@@ -363,3 +363,33 @@ def test_dataset_card_matches_stats():
 
     card_total = int(match.group(1).replace(',', ''))
     assert card_total == total_rows, f"Card total {card_total} does not match pipeline total {total_rows}. Run make_card.py!"
+
+
+def test_no_unmanifested_real_sources() -> None:
+    """Verifies that no record with a real dataset source name exists without a matching entry in the manifest."""
+    import json
+    from pathlib import Path
+
+    FIXTURE_PATH = Path("ml/tests/fixtures/sample_v1.jsonl")
+    if not FIXTURE_PATH.is_file():
+        return
+
+    manifest_path = Path("data/raw/MANIFEST.json")
+    if manifest_path.is_file():
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            manifest = json.load(f)
+    else:
+        manifest = {}
+
+    with open(FIXTURE_PATH, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            source = record.get("source", "")
+            
+            # If it's not synthetic, it must be in the manifest
+            if not source.startswith("synthetic_"):
+                assert source in manifest, (
+                    f"Record uses real dataset source '{source}' but it is not found in data/raw/MANIFEST.json!"
+                )
