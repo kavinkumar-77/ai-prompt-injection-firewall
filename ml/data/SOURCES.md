@@ -55,3 +55,8 @@ Real metadata is preserved and mapped without inventing labels:
 - `synthetic_embedded_injection`: Controlled synthetic injections embedded in real benign texts with disjoint train/test payload sets.
 - `hard_negative_<category>`: Template-based hard negatives (tech docs, code, recipes, requests, security blog, legal).
 - `benign_genre_matched`: Legitimate clean contexts from BIPIA, Wikitext, and Python docs.
+
+
+## OpenAssistant/oasst1
+- **License**: Apache-2.0
+- **Usage**: Used for benign direct requests (label=0, kind=direct). Verified permissive license suitable for training.

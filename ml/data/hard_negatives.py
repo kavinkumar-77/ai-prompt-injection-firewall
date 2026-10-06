@@ -1,3 +1,5 @@
+import hashlib
+
 """Deterministic, template-based hard-negative sample generation.
 
 Generates benign samples (label = 0) containing instruction-like imperative language,
@@ -425,7 +427,7 @@ def generate_hard_negatives_for_split(
     """
     import random
 
-    rng = random.Random(seed + (hash(split) % 10000))
+    rng = random.Random(seed + (int(hashlib.sha256(split.encode()).hexdigest(), 16) % 10000))
     samples: list[dict[str, Any]] = []
 
     categories = list(TEMPLATES.keys())

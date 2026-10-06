@@ -312,3 +312,54 @@ def test_source_expected_kinds() -> None:
                 assert kind == expected_kinds[source], (
                     f"Source {source} expected {expected_kinds[source]} but got {kind}"
                 )
+
+
+def test_pipeline_hash_stability():
+    import hashlib
+    import os
+    import subprocess
+    import sys
+
+    def get_dir_hash(dirname):
+        h = hashlib.sha256()
+        for root, _dirs, files in os.walk(dirname):
+            for f in sorted(files):
+                if f.endswith('.jsonl'):
+                    with open(os.path.join(root, f), 'rb') as file:
+                        h.update(file.read())
+        return h.hexdigest()
+
+    # Need to isolate output dirs to compare properly or run sequentially
+
+    env1 = os.environ.copy()
+    env1['PYTHONHASHSEED'] = '1'
+    subprocess.run([sys.executable, '-m', 'ml.data.pipeline'], env=env1, check=True)
+    hash1 = get_dir_hash('data/processed')
+
+    env2 = os.environ.copy()
+    env2['PYTHONHASHSEED'] = '2'
+    subprocess.run([sys.executable, '-m', 'ml.data.pipeline'], env=env2, check=True)
+    hash2 = get_dir_hash('data/processed')
+
+    assert hash1 == hash2, "Pipeline output is not deterministic across different PYTHONHASHSEED values!"
+
+
+def test_dataset_card_matches_stats():
+    import re
+    from pathlib import Path
+
+    from ml.data.pipeline import run_pipeline
+
+    stats = run_pipeline()
+    splits = stats.get("splits_raw", {})
+
+    total_rows = sum(len(s) for s in splits.values())
+
+    card_path = Path("ml/data/DATASET_CARD.md")
+    content = card_path.read_text(encoding="utf-8")
+
+    match = re.search(r'\*\*Total Processed Samples\*\*: ([\d,]+)', content)
+    assert match is not None
+
+    card_total = int(match.group(1).replace(',', ''))
+    assert card_total == total_rows, f"Card total {card_total} does not match pipeline total {total_rows}. Run make_card.py!"

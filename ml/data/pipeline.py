@@ -19,6 +19,7 @@ from ml.data.sources import (
     load_genre_matched_benign,
     load_hackaprompt_held_out,
     load_jackhhao_samples,
+    load_oasst_benign,
 )
 from ml.data.splitter import partition_dataset
 from ml.data.synthetic_embedded import generate_synthetic_embedded_pairs
@@ -35,19 +36,20 @@ def run_pipeline(
 
     # 1. Ingest approved public sources with strict caps
     raw_records: list[dict[str, Any]] = []
-    raw_records.extend(load_deepset_samples(cap=660, seed=seed))
-    raw_records.extend(load_jackhhao_samples(cap=1000, seed=seed))
-    raw_records.extend(load_bipia_samples(train_cap=1200, test_cap=1200, seed=seed))
+    raw_records.extend(load_deepset_samples(seed=seed))
+    raw_records.extend(load_jackhhao_samples(seed=seed))
+    raw_records.extend(load_oasst_benign())
+    raw_records.extend(load_bipia_samples(train_cap=3200, test_cap=1200, seed=seed))
     raw_records.extend(load_hackaprompt_held_out(cap=1400, seed=seed))
-    raw_records.extend(load_genre_matched_benign(total_count=2500, seed=seed))
+    raw_records.extend(load_genre_matched_benign(total_count=4500, seed=seed))
 
     # 2. Add Hard Negatives (disjoint templates per split)
     raw_records.extend(generate_hard_negatives_for_split("train", target_count=1800, seed=seed))
-    raw_records.extend(generate_hard_negatives_for_split("val", target_count=600, seed=seed))
+    raw_records.extend(generate_hard_negatives_for_split("val", target_count=150, seed=seed))
     raw_records.extend(generate_hard_negatives_for_split("test", target_count=600, seed=seed))
 
     # 3. Add Synthetic Embedded Injections (paired groups, disjoint payloads)
-    raw_records.extend(generate_synthetic_embedded_pairs("train", pair_count=300, seed=seed))
+    raw_records.extend(generate_synthetic_embedded_pairs("train", pair_count=600, seed=seed))
     raw_records.extend(generate_synthetic_embedded_pairs("val", pair_count=100, seed=seed))
     raw_records.extend(generate_synthetic_embedded_pairs("test", pair_count=150, seed=seed))
 

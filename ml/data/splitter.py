@@ -8,7 +8,13 @@ Enforces:
 5. Genre-matched benign distribution with >= 1,500 benign rows in test.
 """
 
+import hashlib
 from typing import Any
+
+
+def _stable_hash(s: str) -> int:
+    return int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16)
+
 
 
 def partition_dataset(
@@ -55,8 +61,8 @@ def partition_dataset(
             continue
         elif preassigned_split == "train":
             # Allow splitting BIPIA train into val to hit 300 positives target!
-            group_hash = hash(gid) % 100
-            if group_hash < 50:
+            group_hash = _stable_hash(gid) % 100
+            if group_hash < 75:
                 target_split = "train"
             else:
                 target_split = "val"
@@ -71,7 +77,7 @@ def partition_dataset(
             continue
 
         # 3. Default fallback based on group hash for deterministic co-location
-        group_hash = hash(gid) % 100
+        group_hash = _stable_hash(gid) % 100
         if group_hash < 70:
             target_split = "train"
         elif group_hash < 85:
@@ -83,7 +89,47 @@ def partition_dataset(
             r["split"] = target_split
         splits[target_split].extend(group)
 
+
+    # --- REBALANCE TO STRICTLY MEET TARGETS ---
+    import random
+    rng = random.Random(42)
+
+    train_pos = [r for r in splits["train"] if r["label"] == 1]
+    train_neg_hard = [r for r in splits["train"] if r["label"] == 0 and "hard_negative" in r["attack_family"]]
+    train_neg_other = [r for r in splits["train"] if r["label"] == 0 and "hard_negative" not in r["attack_family"]]
+
+    target_train_hard = int((0.3 / 0.7) * len(train_neg_other))
+    if len(train_neg_hard) > target_train_hard:
+        rng.shuffle(train_neg_hard)
+        train_neg_hard = train_neg_hard[:target_train_hard]
+    splits["train"] = train_pos + train_neg_other + train_neg_hard
+
+    val_pos = [r for r in splits["val"] if r["label"] == 1]
+    val_neg_hard = [r for r in splits["val"] if r["label"] == 0 and "hard_negative" in r["attack_family"]]
+    val_neg_other = [r for r in splits["val"] if r["label"] == 0 and "hard_negative" not in r["attack_family"]]
+
+    rng.shuffle(val_pos)
+    rng.shuffle(val_neg_hard)
+    rng.shuffle(val_neg_other)
+
+    val_pos = val_pos[:350]
+    val_neg_hard = val_neg_hard[:120]
+    val_neg_other = val_neg_other[:280]
+    splits["val"] = val_pos + val_neg_hard + val_neg_other
+
+    test_pos = [r for r in splits["test"] if r["label"] == 1]
+    test_neg_hard = [r for r in splits["test"] if r["label"] == 0 and "hard_negative" in r["attack_family"]]
+    test_neg_other = [r for r in splits["test"] if r["label"] == 0 and "hard_negative" not in r["attack_family"]]
+
+    target_test_hard = int((0.3 / 0.7) * len(test_neg_other))
+    if len(test_neg_hard) > target_test_hard:
+        rng.shuffle(test_neg_hard)
+        test_neg_hard = test_neg_hard[:target_test_hard]
+
+    splits["test"] = test_pos + test_neg_other + test_neg_hard
+
     return splits
+
 
 
 class DatasetSplitter:
