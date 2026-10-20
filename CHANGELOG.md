@@ -4,6 +4,28 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-10-20
+
+### Added
+- **Production Documentation & Technical Architecture Suite (`docs/`, `README.md`)**:
+  - Completely rewritten `README.md` featuring problem statement, Mermaid architecture diagram, 30-second quickstart, empirical benchmark tables, and code snippets.
+  - `docs/architecture.md`: Component descriptions, data flow, and Mermaid sequence diagrams for text scanning, SSE streaming, and tool-call capability guards.
+  - `docs/threat-model.md`: STRIDE threat model, adversary capability profiles, trust boundaries, and residual risk assessment.
+  - `docs/api.md`: Comprehensive OpenAPI v1 reference with schemas and runnable cURL / Python examples for all endpoints.
+  - `docs/evaluation.md`: Empirical benchmark report compiling holdout classifier metrics (1.0000 precision, 0/2,550 FPR), confusion matrix, operating points, Attack Lab results, and red-team benchmark metrics.
+  - `docs/owasp-mapping.md`: Comprehensive compliance matrix mapping OWASP Top 10 for LLMs (2025) against AEGIS defense layers and automated test suites.
+  - `docs/limitations.md`: Transparent forensic review of the 27 red-team false negatives, language boundaries, and streaming lookahead trade-offs.
+  - `docs/faq.md`: Frequently asked questions addressing local-first execution, trust levels, zero-data storage guarantees, and latency.
+  - `docs/demo-script.md`: 3-minute structured presentation walkthrough script with timecodes and expected UI states.
+  - `docs/case-study.md`: Production case study documenting attack and defense of an autonomous email agent against indirect prompt injection.
+  - `docs/interview-notes.md`: Technical interview kit with 10 deep architectural questions/answers and 5 verified resume bullet points.
+- **Repository Governance & Community Health**:
+  - `LICENSE`: MIT License.
+  - `SECURITY.md`: Security policy, responsible disclosure contact, and zero-raw-user-data guarantee.
+  - `CONTRIBUTING.md`: Contribution guidelines, development environment setup, and quality gates.
+  - `CODE_OF_CONDUCT.md`: Contributor Covenant v2.1.
+  - Issue and pull request templates (`.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`).
+
 ## [0.8.0] - 2026-10-20
 
 ### Added
