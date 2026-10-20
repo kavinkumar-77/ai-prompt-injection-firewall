@@ -4,6 +4,26 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-20
+
+### Added
+- **OpenAI-Compatible Drop-In Gateway Router (`backend/app/api/v1/gateway.py`, `backend/app/gateway/`)**:
+  - Implemented `POST /v1/chat/completions` supporting non-streaming and Server-Sent Events (SSE) streaming (`stream=true`).
+  - Implemented `GET /v1/models` listing upstream available checkpoints.
+  - Added pre-flight request inspection checking all conversation messages against the 6-layer AEGIS pipeline; returns OpenAI-shaped error payloads (`error.type = "aegis_policy_violation"`, `code = "prompt_injection_blocked"`) on block.
+  - Added post-flight response inspection scanning assistant output for confidential canary leakage (`aegis-canary-...`), exposed API keys/credentials, and markdown image data exfiltration links.
+  - Real-time streaming lookahead buffer (`backend/app/gateway/streaming.py`) terminating compromised token streams mid-flight with structured error chunks.
+  - Upstream connector (`backend/app/gateway/upstream.py`) routing to local Ollama (`http://localhost:11434/v1`) with circuit breaker protection and offline hermetic fake mode.
+- **Database & Privacy-Preserving Event Persistence (`backend/app/storage/`)**:
+  - Added SQLAlchemy 2.0 schema (`SecurityEventModel`, `ApiKeyModel`) with SQLite default and PostgreSQL compatibility.
+  - Salted SHA-256 text hashing guaranteeing zero raw user prompt text is logged or stored in the database.
+  - `EventRepository` and `ApiKeyRepository` for event auditing and key management.
+- **Security & Rate Limiting (`backend/app/security/`)**:
+  - Added API key authentication (`X-API-Key` or `Authorization: Bearer <key>`) with SHA-256 key hashing at rest.
+  - Implemented token bucket rate limiter (`ratelimit.py`) with HTTP 429 and `Retry-After` headers.
+- **Integration Test Suite**:
+  - Added hermetic gateway test suite `backend/tests/test_gateway.py` (109 total passing tests) covering benign completions, prompt injection blocking, SSE streaming, and canary leak prevention.
+
 ## [0.3.0] - 2026-10-20
 
 ### Added

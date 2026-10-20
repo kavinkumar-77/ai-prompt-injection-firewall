@@ -1,8 +1,23 @@
 # Project Status: Project AEGIS
 
-## Honest Current State (Phase 3 Complete)
+## Honest Current State (Phase 4 Complete)
 
 ### What Works (Completed & Operational)
+* **OpenAI-Compatible Proxy Gateway (`backend/app/api/v1/gateway.py`, `backend/app/gateway/`)**:
+  - `POST /v1/chat/completions`: Full drop-in OpenAI-compatible proxy supporting both non-streaming and Server-Sent Events (SSE) streaming (`stream=true`).
+  - `GET /v1/models`: OpenAI-compatible model catalog endpoint.
+  - **Pre-Flight Request Inspection**: Scans system, user, and tool messages across all 6 defense layers; returns OpenAI-shaped error payloads (`error.type = "aegis_policy_violation"`, `code = "prompt_injection_blocked"`) on block, or applies typed placeholder redaction.
+  - **Post-Flight Response Inspection**: Scans model output for system prompt canary token leakage (`aegis-canary-...`), exposed API keys/credentials, and markdown image data exfiltration links.
+  - **Streaming Defense (`streaming.py`)**: Real-time sliding window lookahead token buffer aborting compromised streams mid-flight with structured error chunks.
+  - **Upstream Connector & Resilience (`upstream.py`)**: Proxies to local Ollama (`http://localhost:11434/v1`) or any OpenAI-compatible provider with circuit breaker protection and offline hermetic fake mode.
+  - Standardized gateway headers: `X-Aegis-Request-Id`, `X-Aegis-Verdict`, `X-Aegis-Risk`.
+* **Database & Privacy-Preserving Event Persistence (`backend/app/storage/`)**:
+  - SQLAlchemy 2.0 schema (`SecurityEventModel`, `ApiKeyModel`) with SQLite default and PostgreSQL support.
+  - Salted SHA-256 text hashing guaranteeing zero raw user prompt data is ever logged or stored.
+  - `EventRepository` and `ApiKeyRepository` managing audit logging and authentication keys.
+* **Authentication & Rate Limiting (`backend/app/security/`)**:
+  - API key authentication (`X-API-Key` or `Authorization: Bearer <key>`) with SHA-256 key hashing at rest.
+  - Token bucket rate limiter (`ratelimit.py`) enforcing request limits with HTTP 429 and `Retry-After` headers.
 * **Trust-Aware Multi-Layer Architecture (`backend/app/core/`, `backend/app/layers/`)**:
   - `AegisPipeline`: Sequential 6-layer execution pipeline (`normalizer` -> `secrets` -> `rules` -> `classifier` -> `context` -> `decision`).
   - Structured `LayerResult` with normalized risk scores, labels, and character `Evidence` spans for forensic UI rendering.
@@ -52,6 +67,8 @@
   - `GET /v1/events`, `POST /v1/events/clear`, `GET /v1/events/stats`: Threat audit logs.
   - `GET /v1/metrics`: Telemetry, uptime, latency percentiles, and verdict distribution.
   - `GET /v1/policies`, `GET /v1/policies/{id}`, `PUT /v1/policies/active`: Active presets and audit trail.
+  - `POST /v1/chat/completions`: OpenAI-compatible drop-in gateway endpoint.
+  - `GET /v1/models`: OpenAI-compatible model catalog endpoint.
 * **Observability & Logging (`backend/app/observability/`)**:
   - Structured JSON logging to stdout with `ContextVar` request ID correlation (`X-Request-ID` propagation).
   - Salted SHA-256 payload masking ensuring zero sensitive data exposure in logs.
@@ -67,11 +84,11 @@
   - Legacy TF-IDF proto-matcher moved to `backend/app/layers/legacy_tfidf.py` (marked deprecated as v1 baseline).
   - Attention probe honestly renamed to `lexical_divergence` (syntactic keyword overlap).
 * **Quality Gates & Tooling**:
-  - 100% passing hermetic backend tests (104/104) in `backend/tests/`.
+  - 100% passing hermetic backend tests (109/109) in `backend/tests/`.
   - 100% passing Chrome extension tests (37/37) in `extension/tests/`.
   - Clean production build of React 18 dashboard (`tsc && vite build`).
   - Strict linting and formatting with `ruff check .` (0 errors) and `ruff format .`.
-  - Type-checking with `mypy backend` (0 errors in 45 files).
+  - Type-checking with `mypy backend` (0 errors in 54 files).
   - Root `Makefile` with targets (`setup`, `lint`, `format`, `test`, `eval`, `up`, `demo`).
   - Pre-commit with `detect-secrets`.
   - GitHub Actions CI matrix for Python 3.11/3.12, Node 20, Ruff, Mypy, Pytest with coverage, Extension tests, and Dashboard build.
@@ -84,7 +101,6 @@
 ---
 
 ### What is Missing
-* **Phase 4**: OpenAI-compatible `/v1/chat/completions` proxy gateway.
 * **Phase 5**: Real Attack Lab with sandboxed local agent and live attack scenarios (firewall OFF vs ON).
 * **Phase 6 - 9**: Dashboard evaluation pages, red-team runner, docker-compose, and full documentation.
 
