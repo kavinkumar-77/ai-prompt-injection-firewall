@@ -39,6 +39,7 @@ lerna-debug.log*
 .pnpm-debug.log*
 dashboard/dist/
 extension/dist/
+aegis_client/dist/
 
 # Logs & Diagnostics
 logs/

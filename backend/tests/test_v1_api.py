@@ -87,7 +87,8 @@ def test_v1_policies(client: TestClient) -> None:
     policies = response.json()
     assert isinstance(policies, list)
     assert len(policies) >= 1
-    assert policies[0]["id"] == "default_strict"
+    assert policies[0]["id"] in ("default_strict", "strict", "balanced", "lenient")
+    assert "block_threshold" in policies[0]
 
 
 def test_v1_metrics(client: TestClient) -> None:

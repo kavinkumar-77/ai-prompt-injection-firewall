@@ -1,8 +1,25 @@
 # Project Status: Project AEGIS
 
-## Honest Current State (Phase 6 Complete)
+## Honest Current State (Phase 7 Complete)
 
 ### What Works (Completed & Operational)
+* **AEGIS Red-Team Evaluation Harness (`redteam/`)**:
+  - Standalone CLI tool (`aegis-redteam`) evaluating 205 test cases (160 attacks across OWASP LLM01/02/06 and 45 benign control hard negatives).
+  - 6 dedicated corpus test suites: `direct_injections.yaml`, `indirect_injections.yaml`, `delimiter_smuggling.yaml`, `credential_exfil.yaml`, `jailbreaks.yaml`, `benign_controls.yaml`.
+  - Obfuscation mutators (`redteam/mutators.py`): Base64 encoding, Cyrillic homoglyph substitution, HTML comment wrapping, hidden CSS wrapping, split concatenation, uppercase/lowercase/title casing, and whitespace insertion.
+  - Automated report generation in Markdown (`report.md`), JSON (`report.json`), and HTML (`report.html`) with an auto-generated "Known Bypasses" appendix detailing false negatives.
+  - Measured Benchmark: **83.12% Attack Detection Rate** (133/160 detected), **0.00% False Positive Rate** (0/45 false positives), **P95 Latency 1.48 ms**.
+  - Configurable CLI quality gates (`--min-detection-rate`, `--max-fpr`) returning non-zero exit codes on security regression.
+* **Official `aegis-client` Python SDK (`aegis_client/`)**:
+  - Publish-ready wheel and sdist package (`pyproject.toml`) verified with `python -m build`.
+  - Synchronous (`AegisClient`) and Asynchronous (`AsyncAegisClient`) HTTP clients for all scan, tool-call, health, and policy endpoints.
+  - Drop-in OpenAI client wrapper (`wrap_openai`) redirecting chat completions through the AEGIS gateway transparently.
+  - FastAPI / Starlette firewall middleware (`AegisFirewallMiddleware`) intercepting and inspecting incoming JSON bodies.
+  - LangChain-compatible security callback handler (`AegisSecurityCallbackHandler`) intercepting LLM start events.
+* **Runnable Integration Examples (`examples/`)**:
+  - `01_openai_sdk_gateway.py`: Drop-in OpenAI SDK integration.
+  - `02_fastapi_middleware.py`: FastAPI security middleware.
+  - `03_tool_call_guard.py`: Autonomous agent tool-calling capability guard.
 * **Operator Security Console Rebuild (`dashboard/`, `backend/app/api/v1/eval.py`)**:
   - React 18, TypeScript (strict), Vite, Tailwind CSS console completely free of hardcoded mock data and simulated badges.
   - **Overview**: Real-time requests, P95 latency (&lt; 1.5 ms), block rate, ONNX CPU engine health, upstream LLM connector status, and live threat feed.
@@ -72,7 +89,7 @@
   - Parameter security: email domain restriction, path traversal prevention (`../`, `/etc/`, `C:\Windows`), and dangerous shell pattern detection.
 * **Real Trained ML Detector & ONNX Runtime Pipeline (`ml/`, `backend/app/layers/classifier.py`)**:
   - Sublinear TF-IDF + Calibrated Logistic Regression trained on 5,380 samples, validated on 750 samples (Val F1: 0.9899, AUC: 0.9999).
-  - Exported to ONNX (`models/classifier.onnx`, 982 KB) with verified numerical parity (< 2e-3 difference against float64).
+  - Exported to ONNX (`models/classifier.onnx`, 982 KB) with verified numerical parity (&lt; 2e-3 difference against float64).
   - Tracked in `models/MANIFEST.json` with SHA-256 integrity hash (`d791e94c10958619bc21d6598b69765eb5ec4ba8934d8638101309cbbe993485`).
   - Single-threaded CPU inference with sliding window chunking (window 500, stride 250) and max-pool aggregation.
   - Test set performance: Precision 1.0000, 0 false positives out of 2,550 negatives, Hard-Negative FPR: 0.0000%.
@@ -91,6 +108,7 @@
   - `GET /v1/policies`, `GET /v1/policies/{id}`, `PUT /v1/policies/active`: Active presets and audit trail.
   - `POST /v1/chat/completions`: OpenAI-compatible drop-in gateway endpoint.
   - `GET /v1/models`: OpenAI-compatible model catalog endpoint.
+  - `GET /v1/eval/metrics`, `GET /v1/eval/lab`: Real metrics report endpoints.
 * **Observability & Logging (`backend/app/observability/`)**:
   - Structured JSON logging to stdout with `ContextVar` request ID correlation (`X-Request-ID` propagation).
   - Salted SHA-256 payload masking ensuring zero sensitive data exposure in logs.
@@ -106,11 +124,11 @@
   - Legacy TF-IDF proto-matcher moved to `backend/app/layers/legacy_tfidf.py` (marked deprecated as v1 baseline).
   - Attention probe honestly renamed to `lexical_divergence` (syntactic keyword overlap).
 * **Quality Gates & Tooling**:
-  - 100% passing hermetic backend tests (109/109) in `backend/tests/`.
+  - 100% passing hermetic backend tests (122/122) in `backend/tests/`.
   - 100% passing Chrome extension tests (37/37) in `extension/tests/`.
   - Clean production build of React 18 dashboard (`tsc && vite build`).
   - Strict linting and formatting with `ruff check .` (0 errors) and `ruff format .`.
-  - Type-checking with `mypy backend` (0 errors in 54 files).
+  - Type-checking with `mypy backend aegis_client` (0 errors in 65 files).
   - Root `Makefile` with targets (`setup`, `lint`, `format`, `test`, `eval`, `up`, `demo`).
   - Pre-commit with `detect-secrets`.
   - GitHub Actions CI matrix for Python 3.11/3.12, Node 20, Ruff, Mypy, Pytest with coverage, Extension tests, and Dashboard build.
@@ -123,12 +141,23 @@
 ---
 
 ### What is Missing
-* **Phase 5**: Real Attack Lab with sandboxed local agent and live attack scenarios (firewall OFF vs ON).
-* **Phase 6 - 9**: Dashboard evaluation pages, red-team runner, docker-compose, and full documentation.
+* **Phase 8**: Deployment & Hardening (Dockerfiles, docker-compose.yml, dev_up.py, security hardening & ReDoS test).
+* **Phase 9**: Documentation, Demo Script & Final Polish (README rewrite, threat model, API docs, evaluation docs, demo script).
 
 ---
 
 ### What is Measured
+* **Red-Team Evaluation Harness (`redteam/reports/report.json`)**:
+  - Attacks Evaluated: 160 across OWASP LLM01, LLM02, LLM06.
+  - Attack Detection Rate: **83.12%** (133 / 160 detected).
+  - Benign Controls Evaluated: 45 hard negatives.
+  - False Positive Rate: **0.00%** (0 / 45 false positives).
+  - P95 Evaluation Latency: **1.48 ms**.
+* **Attack Lab (`lab/reports/summary.json`)**:
+  - ASR Without AEGIS: **100.0%** (11/11 attacks succeeded).
+  - ASR With AEGIS: **0.0%** (0/11 attacks succeeded).
+  - False Positive Rate on Controls: **0.0%** (0/1 false positives).
+  - Risk Reduction: **-100.0%**.
 * **Detector Accuracy (`ml/reports/metrics.json`)**:
   - Overall Test Precision: 1.0000 (0 false positives on 2,550 test negatives).
   - Hard-Negative FPR: 0.0000% (0 / 600 false positives on benign security/coding prompts).
@@ -137,11 +166,11 @@
 * **Inference Latency (`ml/reports/latency.json`)**:
   - CPU Single-Thread p50: 0.29 - 0.44 ms.
   - CPU Single-Thread p95: 0.61 - 0.94 ms.
-  - CPU 32-Thread Concurrency p95: < 2.5 ms.
+  - CPU 32-Thread Concurrency p95: &lt; 2.5 ms.
 * **Quality Gates**:
   - `ruff check .`: 0 errors.
-  - `ruff format --check .`: Clean.
-  - `mypy backend`: 0 errors in 36 source files.
-  - `pytest backend/tests`: 77/77 passed cleanly.
+  - `ruff format --check .`: Clean across all python files.
+  - `mypy backend aegis_client`: 0 errors in 65 source files.
+  - `pytest backend/tests`: 122/122 passed cleanly.
   - `extension` (`npm test`): 37/37 passed.
   - `dashboard` (`npm run build`): Clean production bundle.

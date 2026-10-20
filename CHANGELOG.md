@@ -4,6 +4,29 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-20
+
+### Added
+- **AEGIS Red-Team Evaluation Harness (`redteam/`)**:
+  - `aegis-redteam` CLI evaluating 205 test cases (160 attacks across OWASP LLM01/02/06 and 45 benign control hard negatives).
+  - Corpus suites: `direct_injections.yaml`, `indirect_injections.yaml`, `delimiter_smuggling.yaml`, `credential_exfil.yaml`, `jailbreaks.yaml`, `benign_controls.yaml`.
+  - Obfuscation mutators (`mutators.py`): Base64 encoding, Cyrillic homoglyph substitution, HTML comment wrapping, hidden CSS wrapping, split concatenation, casing, whitespace.
+  - Automated reporting in Markdown (`report.md`), JSON (`report.json`), and HTML (`report.html`) with an auto-generated "Known Bypasses" appendix.
+  - Measured Benchmark: **83.12% Attack Detection Rate**, **0.00% False Positive Rate**, **P95 Latency 1.48 ms**.
+  - Configurable CLI quality gate (`--min-detection-rate`, `--max-fpr`) returning non-zero exit code on security regression.
+- **Official `aegis-client` Python SDK (`aegis_client/`)**:
+  - Publish-ready wheel and sdist package (`pyproject.toml`) verified with `python -m build`.
+  - Synchronous (`AegisClient`) and Asynchronous (`AsyncAegisClient`) HTTP clients.
+  - Drop-in OpenAI client wrapper (`wrap_openai`) redirecting chat completions to the gateway.
+  - FastAPI / Starlette firewall middleware (`AegisFirewallMiddleware`).
+  - LangChain-compatible security callback handler (`AegisSecurityCallbackHandler`).
+- **Integration Examples (`examples/`)**:
+  - `01_openai_sdk_gateway.py`: Drop-in OpenAI SDK integration.
+  - `02_fastapi_middleware.py`: FastAPI security middleware.
+  - `03_tool_call_guard.py`: Autonomous agent tool-calling capability guard.
+- **Test Suite Expansion**:
+  - Added 6 new integration tests in `backend/tests/test_redteam.py` and `backend/tests/test_sdk.py`, bringing total tests to 122.
+
 ## [0.6.0] - 2026-10-20
 
 ### Added

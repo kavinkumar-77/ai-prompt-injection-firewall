@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AEGIS Red-Team Report</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0E121B; color: #E2E8F0; padding: 2rem; }
+    h1, h2 { color: #FFFFFF; font-family: monospace; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #2D3748; padding: 8px 12px; text-align: left; }
+    th { background: #1A202C; }
+    .kpi { display: inline-block; background: #1A202C; padding: 1rem; border-radius: 8px; margin-right: 1rem; margin-bottom: 1rem; border: 1px solid #2D3748; }
+    .metric { font-size: 1.8rem; font-weight: bold; color: #10B981; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>Project AEGIS Red-Team Security Report</h1>
+  <p>Target: <code>in-process</code> | Policy: <code>balanced</code> | Timestamp: 2026-10-20T14:57:27.898807+00:00</p>
+  <div>
+    <div class="kpi"><div>Detection Rate</div><div class="metric">83.12%</div></div>
+    <div class="kpi"><div>False Positive Rate</div><div class="metric">0.0%</div></div>
+    <div class="kpi"><div>Total Cases</div><div class="metric" style="color: #60A5FA;">205</div></div>
+    <div class="kpi"><div>P95 Latency</div><div class="metric" style="color: #F59E0B;">1.48 ms</div></div>
+  </div>
+  <h2>OWASP Breakdown</h2>
+  <table>
+    <tr><th>Category</th><th>Total</th><th>Detected</th><th>Rate</th></tr>
+    <tr><td>LLM02</td><td>30</td><td>30</td><td>100.0%</td></tr><tr><td>LLM01</td><td>130</td><td>103</td><td>79.2%</td></tr>
+  </table>
+</body>
+</html>
