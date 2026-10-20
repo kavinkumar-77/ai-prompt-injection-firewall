@@ -1,0 +1,31 @@
+# AEGIS Default Capability Policy
+name: default_capabilities
+allowed_tools:
+  - read_file
+  - search_web
+  - fetch_page
+  - write_note
+  - calculate
+  - send_email
+
+denied_tools:
+  - system_shutdown
+  - format_disk
+  - modify_firewall_rules
+  - execute_bash
+  - run_shell_command
+
+high_risk_tools:
+  - send_email
+  - execute_bash
+  - run_shell_command
+  - write_file
+  - delete_file
+  - http_request
+
+allowed_email_domains:
+  - company.com
+  - internal.net
+  - sandbox.local
+
+allow_tainted_high_risk: false

@@ -4,6 +4,37 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-20
+
+### Added
+- **Secrets & PII Detection and In-Place Redaction Layer (`backend/app/layers/secrets.py`)**:
+  - Implemented provider-aware patterns for OpenAI, Anthropic, AWS, GitHub, Google, JWT, private keys, and database connection strings.
+  - Added Shannon entropy estimation (> 3.2 bits/char) to eliminate false positives on short strings.
+  - Algorithmic validation: Luhn checksum validator for credit card numbers and Verhoeff algorithm validator for 12-digit Indian Aadhaar numbers.
+  - Safe redaction mode substituting sensitive fragments with typed placeholders (`[SECRET:openai_api_key]`, `[PII:credit_card]`, `[PII:aadhaar_number]`).
+- **Canary Token Generation & Output Leakage Detection (`backend/app/core/canary.py`)**:
+  - Per-session high-entropy nonces (`aegis-canary-<hex24>`).
+  - Salted HMAC-SHA-256 digests stored at rest.
+  - System prompt directive injection and model output leakage scanning with instant 1.0 risk escalation.
+- **Enhanced Normalization and Deobfuscation (`backend/app/layers/normalizer.py`)**:
+  - Homoglyph and confusable character translation (Cyrillic and Greek lookalikes `а`, `е`, `о`, `р`, `с`, etc.).
+  - Covert HTML comment extraction (`<!-- ... -->`) and hidden CSS element extraction (`display:none`, `visibility:hidden`, `opacity:0`, `font-size:0`, white-on-white text) appended for downstream layer inspection.
+  - ROT13 candidate decoding with injection keyword heuristics.
+- **Context & Indirect Prompt Injection Layer (`backend/app/layers/context.py`)**:
+  - Fine-grained trust boundaries separating `system`, `user`, `retrieved`, and `tool_output`.
+  - Detection of instruction-in-data imperatives, role marker smuggling (`<|im_start|>`, `[INST]`, `<<SYS>>`), persona manipulation, and stealth directives.
+- **Agent Capability Policy Engine (`backend/app/layers/toolcall.py`)**:
+  - Policy-as-code YAML configurations (`policies/default_capabilities.yaml`, `policies/strict_capabilities.yaml`, `policies/lenient_capabilities.yaml`).
+  - Tool allowlists, denylists, and recipient email domain enforcement.
+  - Path traversal checks (`..`, `/etc/`, `C:\Windows`) on file arguments and shell command validation.
+  - Context taint tracking blocking high-risk tools when external untrusted data has influenced conversation history.
+- **Decision Engine & Policies API (`backend/app/core/decision.py`, `backend/app/api/v1/policies.py`)**:
+  - Added policy presets (`strict`, `balanced`, `lenient`).
+  - Multi-layer forensic explanation generation (`explanations: list[str]`).
+  - Dynamic preset switching API (`PUT /v1/policies/active`) with in-memory audit history (`GET /v1/policies/audit/history`).
+- **Test Suite**:
+  - Added 27 new hermetic tests (104 total in `backend/tests/`) covering normalizer obfuscations, secrets/PII checksums, canary tokens, context trust, and tool-call capability policies.
+
 ## [0.2.0] - 2026-10-20
 
 ### Added

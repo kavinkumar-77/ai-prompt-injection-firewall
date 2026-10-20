@@ -1,9 +1,35 @@
-"""Decision engine compiling layer results into final gateway verdicts."""
+"""Decision engine compiling multi-layer findings into gateway verdicts.
+
+Supports configurable policy presets (strict, balanced, lenient),
+trust-level adjustments, redaction conditions, and generates human-readable
+forensic explanations.
+"""
 
 from __future__ import annotations
 
+from typing import Final
+
 from app.core.models import LayerResult, ScanRequest, ScanVerdict
 from app.core.trust import adjust_score_for_trust
+
+POLICY_PRESETS: Final[dict[str, dict[str, float]]] = {
+    "default_strict": {
+        "block_threshold": 0.70,
+        "warn_threshold": 0.40,
+    },
+    "strict": {
+        "block_threshold": 0.50,
+        "warn_threshold": 0.30,
+    },
+    "balanced": {
+        "block_threshold": 0.70,
+        "warn_threshold": 0.40,
+    },
+    "lenient": {
+        "block_threshold": 0.85,
+        "warn_threshold": 0.60,
+    },
+}
 
 
 class DecisionEngine:
@@ -15,62 +41,87 @@ class DecisionEngine:
         warn_threshold: float = 0.40,
         policy_id: str = "default_strict",
     ) -> None:
-        self.block_threshold = block_threshold
-        self.warn_threshold = warn_threshold
         self.policy_id = policy_id
+        if policy_id in POLICY_PRESETS:
+            preset = POLICY_PRESETS[policy_id]
+            self.block_threshold = preset["block_threshold"]
+            self.warn_threshold = preset["warn_threshold"]
+        else:
+            self.block_threshold = block_threshold
+            self.warn_threshold = warn_threshold
+
+    def set_preset(self, preset_name: str) -> None:
+        """Dynamically applies a policy preset."""
+        if preset_name in POLICY_PRESETS:
+            self.policy_id = preset_name
+            self.block_threshold = POLICY_PRESETS[preset_name]["block_threshold"]
+            self.warn_threshold = POLICY_PRESETS[preset_name]["warn_threshold"]
 
     def evaluate(
         self,
         request: ScanRequest,
         layer_results: list[LayerResult],
         sanitized_text: str | None = None,
-    ) -> tuple[ScanVerdict, float, str]:
-        """Calculates final verdict, consolidated risk score, and primary rationale."""
+    ) -> tuple[ScanVerdict, float, str, list[str]]:
+        """Calculates final verdict, consolidated risk score, primary reason, and explanations."""
         if not layer_results:
-            return "allow", 0.0, "No active security layers reported."
+            return "allow", 0.0, "No active security layers reported.", []
 
-        # Find highest raw score and any critical triggers
         raw_max_score = 0.0
-        critical_reasons: list[str] = []
-        has_redaction_target = False
+        explanations: list[str] = []
+        critical_violations: list[str] = []
+        has_redaction = False
 
         for res in layer_results:
             if res.score > raw_max_score:
                 raw_max_score = res.score
-            for ev in res.evidence:
-                if ev.kind in ("secret_exposure", "canary_leak"):
-                    has_redaction_target = True
-                if res.score >= 0.85:
-                    critical_reasons.append(f"{res.layer}: {ev.detail}")
 
-        # Scale score according to trust level of source
+            for ev in res.evidence:
+                explanation = f"[{res.layer.upper()}] {ev.detail}"
+                explanations.append(explanation)
+
+                # Critical trigger detection
+                if "leak" in ev.kind or "canary" in ev.kind or "secret" in ev.kind:
+                    has_redaction = True
+
+                if res.score >= 0.85:
+                    critical_violations.append(f"{res.layer}: {ev.detail}")
+
+        # Adjust score according to caller / origin trust level
         adjusted_score = adjust_score_for_trust(raw_max_score, request.source)
 
-        # Redaction condition
-        if has_redaction_target and sanitized_text is not None and sanitized_text != request.text:
-            return (
-                "redact",
-                adjusted_score,
-                "Sensitive data or canary tokens detected and scrubbed.",
-            )
+        # 1. Redaction Condition (sensitive data scrubbed)
+        if (
+            has_redaction
+            and sanitized_text is not None
+            and sanitized_text != request.text
+            and adjusted_score < 0.95
+        ):
+            reason = "Sensitive credentials or PII detected and redacted with typed placeholders."
+            return "redact", adjusted_score, reason, explanations
 
-        # Hard block if adjusted score exceeds block threshold or critical violations found
-        if adjusted_score >= self.block_threshold or len(critical_reasons) > 0:
-            if critical_reasons:
-                primary_reason = critical_reasons[0]
+        # 2. Hard Block (score exceeds threshold or critical violation confirmed)
+        if adjusted_score >= self.block_threshold or len(critical_violations) > 0:
+            if critical_violations:
+                primary_reason = f"Blocked: {critical_violations[0]}"
             else:
                 primary_reason = (
-                    f"Risk score {adjusted_score:.2f} exceeded blocking threshold "
-                    f"{self.block_threshold:.2f}."
+                    f"Blocked: Consolidated risk score {adjusted_score:.2f} exceeded "
+                    f"policy threshold {self.block_threshold:.2f} (preset '{self.policy_id}')."
                 )
-            return "block", adjusted_score, primary_reason
+            return "block", adjusted_score, primary_reason, explanations
 
-        # Warn condition
+        # 3. Warn Condition
         if adjusted_score >= self.warn_threshold:
-            return (
-                "warn",
-                adjusted_score,
-                f"Elevated suspicion score {adjusted_score:.2f} flagged for monitoring.",
+            primary_reason = (
+                f"Warn: Elevated risk score {adjusted_score:.2f} flagged for monitoring."
             )
+            return "warn", adjusted_score, primary_reason, explanations
 
-        return "allow", adjusted_score, "Payload passed all security inspection layers."
+        # 4. Allow
+        return (
+            "allow",
+            adjusted_score,
+            "Payload passed all active security inspection layers.",
+            explanations,
+        )

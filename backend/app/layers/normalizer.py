@@ -1,9 +1,15 @@
-"""Text normalization and deobfuscation layer for Project AEGIS."""
+"""Text normalization and deobfuscation layer for Project AEGIS.
+
+Implements Unicode NFKC normalization, zero-width steganography stripping,
+homoglyph/confusable folding, ROT13/Base64/Hex/URL decoding, and hidden
+HTML/Markdown extraction (comments, display:none, white-on-white text).
+"""
 
 from __future__ import annotations
 
 import base64
 import binascii
+import codecs
 import re
 import time
 import unicodedata
@@ -28,9 +34,67 @@ HEX_PATTERN = re.compile(r"(?:(?:0x|\\x)[0-9a-fA-F]{2}){4,}")
 # URL percent-encoding candidate
 URL_ENCODED_PATTERN = re.compile(r"(?:%[0-9a-fA-F]{2}){3,}")
 
+# HTML comments pattern
+HTML_COMMENT_PATTERN = re.compile(r"<!--(.*?)-->", re.DOTALL)
+
+# CSS hidden text patterns (display:none, visibility:hidden, opacity:0, font-size:0, white text)
+CSS_HIDDEN_PATTERN = re.compile(
+    r"<(?:span|div|p|section|article)\s+[^>]*?style=[\"'][^\"']*"
+    r"(?:display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0|font-size\s*:\s*0"
+    r"|color\s*:\s*(?:#fff(?:fff)?|white|rgba?\(\s*255\s*,\s*255\s*,\s*255))"
+    r"[^\"']*[\"'][^>]*>(.*?)</(?:span|div|p|section|article)>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# Homoglyph translation mapping (Cyrillic, Greek, lookalikes commonly used in evasion)
+HOMOGLYPH_MAP: dict[str, str] = {
+    # Cyrillic lowercase
+    "\u0430": "a",
+    "\u0441": "c",
+    "\u0435": "e",
+    "\u0456": "i",
+    "\u0458": "j",
+    "\u043e": "o",
+    "\u0440": "p",
+    "\u0455": "s",
+    "\u0443": "y",
+    "\u0445": "x",
+    # Cyrillic uppercase
+    "\u0410": "A",
+    "\u0412": "B",
+    "\u0421": "C",
+    "\u0415": "E",
+    "\u041d": "H",
+    "\u0406": "I",
+    "\u0408": "J",
+    "\u041a": "K",
+    "\u041c": "M",
+    "\u041e": "O",
+    "\u0420": "P",
+    "\u0422": "T",
+    "\u0425": "X",
+    # Greek lookalikes
+    "\u03b1": "a",
+    "\u03bf": "o",
+    "\u03bd": "v",
+    "\u03c1": "p",
+}
+
+# Injection trigger words to verify ROT13 candidates
+ROT13_INDICATORS = {
+    "ignore",
+    "system",
+    "prompt",
+    "instructions",
+    "override",
+    "jailbreak",
+    "disregard",
+    "developer",
+}
+
 
 class NormalizerLayer:
-    """Normalizes Unicode text, removes steganographic markers, and decodes obfuscations."""
+    """Normalizes Unicode text, strips steganography, folds homoglyphs, and unwraps encodings."""
 
     def __init__(self) -> None:
         self.layer_name = "normalizer"
@@ -63,9 +127,7 @@ class NormalizerLayer:
                     Evidence(
                         kind="zero_width_steganography",
                         span=(m.start(), m.end()),
-                        detail=(
-                            f"Detected invisible zero-width char (code U+{ord(m.group()):04X})"
-                        ),
+                        detail=f"Detected invisible zero-width char (code U+{ord(m.group()):04X})",
                     )
                 )
             normalized = ZERO_WIDTH_PATTERN.sub("", normalized)
@@ -90,7 +152,6 @@ class NormalizerLayer:
                     ),
                 )
             )
-            # Replace tag characters with their ASCII equivalents
             normalized = UNICODE_TAGS_PATTERN.sub(
                 lambda m: (
                     chr(ord(m.group()) - 0xE0000) if 0 <= ord(m.group()) - 0xE0000 <= 127 else ""
@@ -98,7 +159,66 @@ class NormalizerLayer:
                 normalized,
             )
 
-        # 4. URL percent-decoding check
+        # 4. Homoglyph / Confusable Folding
+        replaced_chars: list[tuple[int, str, str]] = []
+        chars_list = list(normalized)
+        for idx, char in enumerate(chars_list):
+            if char in HOMOGLYPH_MAP:
+                ascii_char = HOMOGLYPH_MAP[char]
+                chars_list[idx] = ascii_char
+                replaced_chars.append((idx, char, ascii_char))
+
+        if replaced_chars:
+            # Check if homoglyphs are mixed into predominantly Latin words
+            obfuscation_detected = True
+            normalized = "".join(chars_list)
+            first_idx = replaced_chars[0][0]
+            last_idx = replaced_chars[-1][0]
+            preview = ", ".join(f"'{c}'->'{a}'" for _, c, a in replaced_chars[:4])
+            evidence_list.append(
+                Evidence(
+                    kind="homoglyph_obfuscation",
+                    span=(first_idx, last_idx + 1),
+                    detail=f"Folded {len(replaced_chars)} confusable homoglyphs: {preview}",
+                )
+            )
+
+        # 5. Hidden HTML Comments Extraction
+        comment_matches = list(HTML_COMMENT_PATTERN.finditer(normalized))
+        extracted_hidden_text: list[str] = []
+        for m in comment_matches:
+            content = m.group(1).strip()
+            if content and any(c.isalnum() for c in content):
+                obfuscation_detected = True
+                extracted_hidden_text.append(content)
+                evidence_list.append(
+                    Evidence(
+                        kind="hidden_html_comment",
+                        span=(m.start(), m.end()),
+                        detail=f"Extracted covert HTML comment payload: {content[:60]}",
+                    )
+                )
+
+        # 6. Hidden CSS Elements Extraction (display:none / white text)
+        css_hidden_matches = list(CSS_HIDDEN_PATTERN.finditer(normalized))
+        for m in css_hidden_matches:
+            inner_text = m.group(1).strip()
+            if inner_text:
+                obfuscation_detected = True
+                extracted_hidden_text.append(inner_text)
+                evidence_list.append(
+                    Evidence(
+                        kind="hidden_css_element",
+                        span=(m.start(), m.end()),
+                        detail=f"Extracted hidden CSS element payload: {inner_text[:60]}",
+                    )
+                )
+
+        if extracted_hidden_text:
+            # Append hidden text with a clear delimiter so downstream layers analyze it
+            normalized += "\n\n" + "\n".join(extracted_hidden_text)
+
+        # 7. URL percent-decoding check
         url_matches = list(URL_ENCODED_PATTERN.finditer(normalized))
         for m in url_matches:
             try:
@@ -117,13 +237,12 @@ class NormalizerLayer:
             except Exception:
                 pass
 
-        # 5. Base64 unwrap check
+        # 8. Base64 unwrap check
         for m in list(BASE64_PATTERN.finditer(normalized)):
             raw_token = m.group()
             try:
                 decoded_bytes = base64.b64decode(raw_token, validate=True)
                 decoded_str = decoded_bytes.decode("utf-8")
-                # Filter out pure noise / binary blobs
                 if (
                     len(decoded_str) >= 4
                     and sum(c.isprintable() for c in decoded_str) / len(decoded_str) > 0.85
@@ -140,7 +259,7 @@ class NormalizerLayer:
             except (binascii.Error, UnicodeDecodeError, ValueError):
                 continue
 
-        # 6. Hex unwrap check
+        # 9. Hex unwrap check
         for m in list(HEX_PATTERN.finditer(normalized)):
             raw_hex = m.group().replace("0x", "").replace("\\x", "")
             try:
@@ -161,6 +280,23 @@ class NormalizerLayer:
                     normalized = normalized[: m.start()] + decoded_str + normalized[m.end() :]
             except Exception:
                 continue
+
+        # 10. ROT13 decoding check
+        words = normalized.split()
+        if len(words) >= 3:
+            rot13_candidate = codecs.decode(normalized, "rot_13")
+            rot13_lower = rot13_candidate.lower()
+            matched_indicators = [ind for ind in ROT13_INDICATORS if ind in rot13_lower]
+            if len(matched_indicators) >= 2:
+                obfuscation_detected = True
+                evidence_list.append(
+                    Evidence(
+                        kind="rot13_obfuscation",
+                        span=(0, min(100, len(normalized))),
+                        detail=f"Decoded ROT13 cipher containing: {', '.join(matched_indicators)}",
+                    )
+                )
+                normalized = rot13_candidate
 
         elapsed = (time.perf_counter() - start_time) * 1000
         score = 0.50 if obfuscation_detected else 0.0

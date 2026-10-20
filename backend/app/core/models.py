@@ -77,6 +77,14 @@ class ToolCallScanRequest(BaseModel):
         default="tool_output",
         description="Source role initiating or resulting from the call",
     )
+    is_tainted: bool = Field(
+        default=False,
+        description="Whether conversation context contains untrusted/retrieved data",
+    )
+    agent_role: str | None = Field(
+        default=None,
+        description="Optional agent persona or capability role",
+    )
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Session and environment metadata"
     )
@@ -94,12 +102,20 @@ class ScanResponse(BaseModel):
     layers: list[LayerResult] = Field(
         default_factory=list, description="Ordered layer execution results"
     )
+    explanations: list[str] = Field(
+        default_factory=list,
+        description="Human-readable forensic explanations from all layers",
+    )
+    rationale: str | None = Field(
+        default=None,
+        description="Primary reason summarizing the final verdict",
+    )
     request_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="Unique trace identifier for audit logging and correlation",
     )
     policy_id: str = Field(
-        default="default_strict", description="Identifier of the policy used for this decision"
+        default="balanced", description="Identifier of the policy used for this decision"
     )
     latency_ms: float = Field(
         default=0.0, ge=0.0, description="Total pipeline processing latency in milliseconds"

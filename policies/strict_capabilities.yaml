@@ -1,0 +1,23 @@
+# AEGIS Strict Capability Policy
+name: strict_capabilities
+allowed_tools:
+  - read_file
+  - calculate
+  - write_note
+
+denied_tools:
+  - system_shutdown
+  - format_disk
+  - modify_firewall_rules
+  - execute_bash
+  - run_shell_command
+  - send_email
+  - http_request
+
+high_risk_tools:
+  - read_file
+  - write_note
+
+allowed_email_domains: []
+
+allow_tainted_high_risk: false

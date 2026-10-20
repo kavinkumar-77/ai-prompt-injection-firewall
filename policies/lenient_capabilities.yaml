@@ -1,0 +1,24 @@
+# AEGIS Lenient Capability Policy (Testing / Developer Mode)
+name: lenient_capabilities
+allowed_tools:
+  - read_file
+  - search_web
+  - fetch_page
+  - write_note
+  - calculate
+  - send_email
+  - execute_bash
+  - http_request
+
+denied_tools:
+  - system_shutdown
+  - format_disk
+
+high_risk_tools:
+  - execute_bash
+  - send_email
+
+allowed_email_domains:
+  - "*"
+
+allow_tainted_high_risk: true

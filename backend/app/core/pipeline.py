@@ -16,11 +16,12 @@ from app.layers.classifier import ClassifierLayer
 from app.layers.context import ContextLayer
 from app.layers.normalizer import NormalizerLayer
 from app.layers.rules import RulesLayer
+from app.layers.secrets import SecretsLayer
 from app.layers.toolcall import ToolCallLayer
 
 
 class AegisPipeline:
-    """Orchestrates ordered execution of normalizer, rules, classifier, and decision layers."""
+    """Orchestrates ordered execution of normalizer, secrets, rules, classifier, and decision."""
 
     def __init__(
         self,
@@ -29,6 +30,7 @@ class AegisPipeline:
         policy_id: str = "default_strict",
     ) -> None:
         self.normalizer = NormalizerLayer()
+        self.secrets = SecretsLayer()
         self.rules = RulesLayer()
         self.classifier = ClassifierLayer()
         self.context = ContextLayer()
@@ -49,23 +51,27 @@ class AegisPipeline:
         normalized_text, norm_result = self.normalizer.process(request.text)
         layers.append(norm_result)
 
-        # Layer 2: Deterministic Rules
-        rules_result = self.rules.process(normalized_text)
+        # Layer 2: Secrets and PII with redaction
+        redacted_text, secrets_result = self.secrets.process(normalized_text, redact=True)
+        layers.append(secrets_result)
+
+        # Layer 3: Deterministic Rules
+        rules_result = self.rules.process(redacted_text)
         layers.append(rules_result)
 
-        # Layer 3: ML Classifier
-        clf_result = self.classifier.process(normalized_text)
+        # Layer 4: ML Classifier
+        clf_result = self.classifier.process(redacted_text)
         layers.append(clf_result)
 
-        # Layer 4: Context & Trust-Aware Scrutiny
-        ctx_result = self.context.process(normalized_text, source=request.source)
+        # Layer 5: Context & Trust-Aware Scrutiny
+        ctx_result = self.context.process(redacted_text, source=request.source)
         layers.append(ctx_result)
 
-        # Layer 5: Decision Engine
-        verdict, risk_score, _rationale = self.decision_engine.evaluate(
+        # Layer 6: Decision Engine
+        verdict, risk_score, rationale, explanations = self.decision_engine.evaluate(
             request=request,
             layer_results=layers,
-            sanitized_text=normalized_text if normalized_text != request.text else None,
+            sanitized_text=redacted_text if redacted_text != request.text else None,
         )
 
         total_latency = (time.perf_counter() - start_time) * 1000
@@ -74,20 +80,27 @@ class AegisPipeline:
             verdict=verdict,
             risk_score=risk_score,
             layers=layers,
+            explanations=explanations,
+            rationale=rationale,
             request_id=req_id,
             policy_id=self.decision_engine.policy_id,
             latency_ms=round(total_latency, 3),
-            sanitized_text=normalized_text if verdict == "redact" else None,
+            sanitized_text=redacted_text if verdict == "redact" else None,
         )
 
     def scan_tool_call(self, request: ToolCallScanRequest) -> ScanResponse:
-        """Evaluates an agent tool invocation against security policies."""
+        """Evaluates an agent tool invocation against security policies and taint state."""
         start_time = time.perf_counter()
         req_id = str(uuid.uuid4())
         layers: list[LayerResult] = []
 
-        # Layer 1: Tool call argument safety
-        tool_result = self.toolcall.process(request.tool_name, request.arguments)
+        # Layer 1: Tool call argument and capability policy safety
+        tool_result = self.toolcall.process(
+            tool_name=request.tool_name,
+            arguments=request.arguments,
+            is_tainted=request.is_tainted,
+            agent_role=request.agent_role,
+        )
         layers.append(tool_result)
 
         # Layer 2: Scan string parameters for prompt injection / exfiltration payloads
@@ -104,7 +117,7 @@ class AegisPipeline:
 
         # Decide verdict
         fake_req = ScanRequest(text=request.tool_name, source=request.caller_role)
-        verdict, risk_score, _rationale = self.decision_engine.evaluate(
+        verdict, risk_score, rationale, explanations = self.decision_engine.evaluate(
             request=fake_req,
             layer_results=layers,
         )
@@ -115,6 +128,8 @@ class AegisPipeline:
             verdict=verdict,
             risk_score=risk_score,
             layers=layers,
+            explanations=explanations,
+            rationale=rationale,
             request_id=req_id,
             policy_id=self.decision_engine.policy_id,
             latency_ms=round(total_latency, 3),
