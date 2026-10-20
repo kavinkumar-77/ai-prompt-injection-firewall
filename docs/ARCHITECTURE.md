@@ -1,104 +1,119 @@
-# AI Defense Gateway: System Architecture
+# Project AEGIS — System Architecture
 
-## 1. Overview
-The **AI Defense Gateway** is a modular, multi-layer proxy that sits between clients (users, autonomous agents) and LLM inference endpoints. It eliminates prompt injection vulnerabilities by verifying input semantics, probing internal model activations, enforcing capability policies, and containing untrusted execution flows.
+## 1. Executive Overview
 
----
-
-## 2. Component Architecture
+**Project AEGIS** is a local-first security gateway that operates as an intelligent firewall between client applications, autonomous AI web agents, and Large Language Models (LLMs). It prevents direct and indirect prompt injection, sensitive data and credential leakage, and unsafe tool execution by enforcing deterministic rules, text normalization, trust-aware context analysis, and machine-learning classification.
 
 ```text
-+-----------------------------------------------------------------------------------+
-|                              INGESTION & EXTRACTION                               |
-|   +-------------------+   +--------------------+   +--------------------------+   |
-|   | HTML Extractor    |   | PDF/DOCX Extractor |   | Image OCR / Vision Prep  |   |
-|   +-------------------+   +--------------------+   +--------------------------+   |
-|                     \               |               /                             |
-|                      v              v              v                              |
-|                         Normalized Text Chunks + Provenance                       |
-+-----------------------------------------------------------------------------------+
-                                      |
-                                      v
-+-----------------------------------------------------------------------------------+
-|                        AI DEFENSE GATEWAY (FastAPI / PyTorch)                      |
-|                                                                                   |
-|  [FAST PATH]                                                                      |
-|  +-----------------------------------------------------------------------------+  |
-|  | Layer 1: Semantic Classifier (DeBERTa-v3-small / ModernBERT, ~100-150M params)  |
-|  | -> Inference latency: < 15ms | Checks: Adversarial patterns, hard negatives |  |
-|  +-----------------------------------------------------------------------------+  |
-|         |                                              \ (If flagged High Risk)   |
-|         v (If Ambiguous / High Trust Risk)              v                         |
-|  [DEEP PATH]                                         [BLOCK / SANITIZE]           |
-|  +-----------------------------------------------------------------------------+  |
-|  | Layer 2: Model-Internal Signals (1.5B LLM, FP16)                             |  |
-|  | -> Probes: Attention shifts on instruction tokens, activation deltas        |  |
-|  +-----------------------------------------------------------------------------+  |
-|         |                                                                         |
-|         v                                                                         |
-|  +-----------------------------------------------------------------------------+  |
-|  | Layer 4: Architectural Containment & Taint Engine                           |  |
-|  | -> Tracks untrusted data provenance; enforces Quarantined-LLM boundaries   |  |
-|  +-----------------------------------------------------------------------------+  |
-+-----------------------------------------------------------------------------------+
-                                      |
-                                      v
-+-----------------------------------------------------------------------------------+
-|                            TARGET LLM EXECUTION                                   |
-|   Target Model receives sanitized prompt and generates response / tool calls      |
-+-----------------------------------------------------------------------------------+
-                                      |
-                                      v
-+-----------------------------------------------------------------------------------+
-|                         INTENT & POLICY VERIFICATION                              |
-|  +-----------------------------------------------------------------------------+  |
-|  | Layer 3: Intent/Task Alignment Checker                                       |  |
-|  | -> Compares proposed tool calls (e.g. MCP actions) against original goal    |  |
-|  +-----------------------------------------------------------------------------+  |
-|  +-----------------------------------------------------------------------------+  |
-|  | Policy Engine: Capability Matrix (Permit / Confirm / Deny)                   |  |
-|  +-----------------------------------------------------------------------------+  |
-+-----------------------------------------------------------------------------------+
-                                      |
-                                      v
-                               Action Executed / Blocked
+┌────────────────────────────┐        ┌─────────────────────────────────────────────┐
+│ Client apps / agents       │        │ AEGIS Gateway (FastAPI)                      │
+│  - Attack Lab agent app    │  HTTP  │                                              │
+│  - OpenAI-compatible client├───────►│  /v1/chat/completions  (OpenAI-compatible)   │
+│  - Chrome extension        │        │  /v1/scan              (Scan text payloads)  │
+│  - In-app SDK / aegis-shield│       │  /v1/scan/tool-call    (Tool action check)   │
+└────────────────────────────┘        │  /v1/policies, /v1/events, /v1/metrics ...   │
+                                      │                                              │
+                                      │  Pipeline (ordered, returns LayerResult):    │
+                                      │   1 Normalizer / Deobfuscator                │
+                                      │   2 Rule layer (delimiters, exfil, secrets)  │
+                                      │   3 ML classifier (ONNX Runtime, trained)    │
+                                      │   4 Context layer (trust-aware, RAG chunks)  │
+                                      │   5 Tool-call policy engine                  │
+                                      │   6 Decision engine (verdict: allow|warn|block)│
+                                      │                                              │
+                                      │  Upstream: Ollama / OpenAI-compatible LLM    │
+                                      │  Storage: SQLite (default) / Postgres        │
+                                      └──────────────────────┬──────────────────────┘
+                                                             │
+                                      ┌──────────────────────▼──────────────────────┐
+                                      │ Dashboard (React 18 + TS + Vite + Tailwind)  │
+                                      │  Overview · Attack Studio · Docs & Reasoning │
+                                      │  Threat Feed · Policies · Evaluation · Audit │
+                                      └──────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. How the Layers Combine
+## 2. Multi-Layer Pipeline (`backend/app/core/pipeline.py`)
 
-To deliver high detection accuracy without incurring severe latency on every request, the gateway operates a **cascaded decision pipeline**:
+Every payload entering the gateway passes sequentially through the inspection layers. Each layer executes independently and returns a `LayerResult` containing a normalized risk score ($0.0 \le score \le 1.0$), a descriptive label, execution latency, and character-level `Evidence` spans for forensic UI highlighting.
 
-1. **Fast-Path Screening (Layer 1)**:
-   - Every input chunk passes through the fine-tuned DeBERTa/ModernBERT classifier.
-   - If confidence is decisively benign ($score < 0.20$), it passes immediately.
-   - If confidence is decisively malicious ($score > 0.85$), the chunk is blocked or scrubbed with an audit event emitted.
+### Layer 1: Normalizer / Deobfuscator (`backend/app/layers/normalizer.py`)
+- **Unicode NFKC Normalization**: Resolves homoglyphs and mixed-script lookalikes.
+- **Zero-Width & Invisible Characters**: Detects and strips steganographic markers (`U+200B` to `U+200D`, `U+FEFF`, directional overrides `U+202A` to `U+202E`).
+- **Unicode Tag Decoding**: Translates covert tags (`U+E0000` to `U+E007F`) into printable ASCII.
+- **Multi-Scheme Unwrapping**: Identifies and decodes Base64, Hexadecimal, and URL percent-encoded payloads with span tracking.
 
-2. **Deep-Path Activation Probing (Layer 2)**:
-   - If Layer 1 returns borderline uncertainty ($0.20 \le score \le 0.85$) or if the text originates from high-risk untrusted sources (unverified web RAG chunks), Layer 2 is engaged.
-   - A local 1–2B model runs forward-pass inference in FP16 to measure attention concentration shifts away from the system task toward the untrusted segment.
+### Layer 2: Deterministic Rule Layer (`backend/app/layers/rules.py`)
+Deterministic regex signatures executing in $< 0.1\text{ ms}$:
+* `R-DELIM-001` (Chat Template Delimiters): Detects `<|im_start|>`, `<|im_end|>`, `[INST]`, `[/INST]`, `<<SYS>>`, `<s>[SYSTEM]`, `Human:... Assistant:...`.
+* `R-EXFIL-001` (Covert Image Exfiltration): Detects untrusted markdown `![...](https://attacker.com/leak?cookie=...)` and `<img src="...token=...">` tags.
+* `R-JAIL-001` (Roleplay Jailbreaks): Flags persona hijacking ("you are now DAN", "Developer Mode", "ignore safety policies").
+* `R-OVERRIDE-001` (Instruction Overrides): Catches commands commanding the model to disregard prior instructions ("ignore all previous instructions", "system override:").
+* `R-SECRET-001` (Credential Patterns): Detects high-entropy OpenAI keys (`sk-...`), Anthropic keys (`sk-ant-...`), AWS Access IDs (`AKIA...`), RSA private keys, and JWT headers.
 
-3. **Taint Tracking & Containment (Layer 4)**:
-   - When untrusted data enters the context, the session is marked as **tainted**.
-   - Tainted sessions cannot execute high-impact capabilities (writing to disk, outbound HTTP requests, invoking terminal commands) without explicit human confirmation.
+### Layer 3: ML Classifier (`backend/app/layers/classifier.py`)
+- Evaluates semantic representations against trained prompt-injection models.
+- **Phase 1 Baseline**: Scikit-Learn TF-IDF vector prober (`legacy_tfidf.py`).
+- **Phase 2 Target**: Quantized ONNX INT8 transformer (`microsoft/deberta-v3-small` or `all-MiniLM-L6-v2`) executing locally on CPU via ONNX Runtime ($< 15\text{ ms}$ latency).
 
-4. **Action & Tool Alignment (Layer 3)**:
-   - When the target model proposes a tool invocation (e.g. via MCP), the action checker calculates semantic alignment against the original user prompt. Any divergence triggers an immediate block.
+### Layer 4: Context & Trust-Aware Scrutiny (`backend/app/layers/context.py`)
+Enforces the **First-Class Trust Level Concept**:
+- `system`: Trusted developer instruction context (multiplier: $0.2$).
+- `user`: Interactive direct prompt (multiplier: $1.0$).
+- `retrieved`: External RAG documents, ingested PDFs, scraped HTML (multiplier: $1.35$).
+- `tool_output`: Returned payloads from external tools and plugins (multiplier: $1.45$).
+*Imperative commands found inside `retrieved` chunks or `tool_output` constitute **indirect prompt injection** and receive an immediate high-risk penalty.*
 
-5. **Adaptive Red-Team Loop (Layer 5 - Offline)**:
-   - An offline local 4-bit quantized attacker LLM attempts automated evasion against Layer 1. Successful bypasses are added to the training set for iterative model retraining.
+### Layer 5: Tool-Call Policy Engine (`backend/app/layers/toolcall.py`)
+- Inspects proposed agent tool calls prior to execution.
+- Intercepts dangerous system commands (`rm -rf`, `mkfs`, `curl | bash`, SQL drops) and forbids unauthorized tool invocation (`system_shutdown`, `format_disk`).
+
+### Layer 6: Decision Engine (`backend/app/core/decision.py`)
+- Compiles findings across all layers factoring in source trust multipliers.
+- Emits one of four deterministic actions:
+  - `allow`: Payload verified clean; forwarded upstream.
+  - `warn`: Elevated suspicion score ($0.40 \le score < 0.70$); flagged for monitoring.
+  - `block`: Violation detected or score exceeds block threshold ($score \ge 0.70$).
+  - `redact`: Sensitive data or canary tokens scrubbed and replaced.
 
 ---
 
-## 4. Hardware Budget & Resource Allocation (Laptop Constraints)
+## 3. Core Data Schemas (`backend/app/core/models.py`)
 
-| Component | Target Architecture | Parameter Count | Precision | VRAM Footprint |
-| :--- | :--- | :--- | :--- | :--- |
-| **Layer 1: Semantic Classifier** | DeBERTa-v3-small / ModernBERT | 100M–149M | FP16 / INT8 | $\approx$ 300 MB |
-| **Layer 2: Probing Model** | Qwen2.5-1.5B / SmolLM2-1.7B | 1.5B–1.7B | FP16 | $\approx$ 3.5 GB |
-| **Layer 3: Alignment Checker** | Embeddings / Light cross-encoder | $\le$ 100M | FP16 | $\approx$ 250 MB |
-| **Layer 5: Attacker Generator (Offline)** | Quantized 1–2B LLM | 1.5B | INT4 | $\approx$ 1.5 GB |
-| **Total Concurrently Active** | **Layers 1, 2, 3, 4** | — | — | **$\le$ 4.2 GB VRAM (Fits in 6 GB RTX 4050)** |
+```python
+class Evidence(BaseModel):
+    kind: str                         # e.g., "rule_match_R-DELIM-001", "base64_payload"
+    span: tuple[int, int] | None      # (start_char, end_char) within analyzed text
+    detail: str                       # Human-readable explanation
 
-> **VRAM Scheduling Invariant**: Layer 2 (FP16 Prober) and Layer 5 (INT4 Attacker) are **never** loaded in GPU memory concurrently. Layer 5 runs offline during model development and red-teaming cycles.
+class LayerResult(BaseModel):
+    layer: str                        # Layer name
+    score: float                      # Normalized risk [0.0, 1.0]
+    label: str                        # Diagnostic label
+    evidence: list[Evidence]          # Flagged evidence fragments
+    latency_ms: float                 # Layer execution duration
+
+class ScanRequest(BaseModel):
+    text: str                         # Untrusted input
+    source: Literal["system", "user", "retrieved", "tool_output"]
+    system_prompt: str | None = None
+    metadata: dict[str, Any] = {}
+
+class ScanResponse(BaseModel):
+    verdict: Literal["allow", "warn", "block", "redact"]
+    risk_score: float
+    layers: list[LayerResult]
+    request_id: str
+    policy_id: str
+    latency_ms: float
+    sanitized_text: str | None = None
+```
+
+---
+
+## 4. Hardware Budget & Resource Allocation
+
+* **Target Hardware:** 16 GB RAM, RTX 4050 6 GB VRAM, Windows 11 / Linux.
+* **Inference Runtime:** Entirely CPU-compatible (ONNX Runtime, Scikit-learn, Regex). VRAM consumption during inference is **0 MB**.
+* **Training Budget (Phase 2):** Fine-tuning runs in FP16 with gradient accumulation on small models (`deberta-v3-small`), fitting comfortably under **4.5 GB VRAM**.
