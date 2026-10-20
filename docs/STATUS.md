@@ -45,6 +45,13 @@
   - `demo/attack-simulator.html`: 6 standalone synthetic evaluation scenarios.
   - `demo/phishing-google.html`: Structural visual clone template for perceptual hash matching.
 
+* **Dataset Curation & Validation Pipeline (`ml/data/`)**:
+  - Reproducible, config-driven compilation pipeline (`pipeline.py`, `sources.py`, `hard_negatives.py`, `splitter.py`, `cleaner.py`, `safety.py`).
+  - Preserves paired document groups (`group_id`) across splits so injection variants never contaminate clean evaluations.
+  - Zero PII scanner and exact/near deduplication engine.
+  - Raw data manifest (`data/raw/MANIFEST.json`) tracking verified source archives and SHA-256 hashes.
+  - 100% passing hermetic unit and integrity tests (11/11) in `ml/tests/`.
+
 ---
 
 ### What is a Placeholder (`placeholder_*`)
@@ -63,8 +70,7 @@
 * **Vector Prototype Accuracy**: 100% test pass rate across attack prototypes and benign hard negatives.
 * **VRAM Usage**: 0 MB baseline under TF-IDF AI engine; under 1.2 GB when GGUF Q4_K_M is loaded, comfortably within 6 GB VRAM budget.
 * **Quality Gates**:
-  - `ruff check backend start_aegis.py`: 0 errors.
-  - `pytest backend/tests`: 24/24 passed.
+  - `ruff check .`: 0 errors.
+  - `pytest` (`backend/tests` + `ml/tests`): 35/35 passed cleanly.
   - `extension` (`npm test`): 37/37 passed.
-  - `dashboard` (`npm run build`): Clean production bundle in ~11.9s.
-
+  - `dashboard` (`npm run build`): Clean production bundle in ~8.5s.

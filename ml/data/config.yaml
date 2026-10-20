@@ -1,0 +1,33 @@
+# Dataset v1 Pipeline Configuration
+random_seed: 42
+
+directories:
+  raw_data_dir: "data/raw"
+  output_data_dir: "data/processed"
+  fixture_dir: "ml/tests/fixtures"
+
+source_caps:
+  deepset: 660
+  jackhhao: 1000
+  hackaprompt: 1500
+  bipia_train: 1500
+  bipia_test: 1500
+  real_benign: 2500
+  hard_negatives: 1250
+
+held_out_unseen_sources:
+  - "hackaprompt/hackaprompt-dataset"
+
+contamination_prohibited_sources:
+  - "uiuc-kang-lab/InjecAgent"
+  - "xTRam1/safe-guard-prompt-injection"
+  - "HumanCompatibleAI/tensor-trust-data"
+  - "microsoft/TaskTracker"
+
+test_requirements:
+  min_benign_test_samples: 1500
+  target_train_balance_ratio: 1.0
+
+deduplication:
+  minhash_num_perm: 64
+  near_duplicate_jaccard_threshold: 0.85

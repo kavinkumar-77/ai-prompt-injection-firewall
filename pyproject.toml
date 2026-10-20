@@ -7,8 +7,8 @@ requires-python = ">=3.11"
 dependencies = []
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests"]
-pythonpath = ["backend"]
+testpaths = ["backend/tests", "ml/tests"]
+pythonpath = ["backend", "."]
 addopts = "-v --strict-markers"
 
 [tool.ruff]

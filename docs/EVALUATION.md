@@ -51,7 +51,11 @@ To measure empirical progress, all experimental runs benchmark against three dis
 
 3. **False Positive Rate (FPR)**:
    $$\text{FPR} = \frac{\text{Benign Chunks Erroneously Flagged as Injection}}{\text{Total Benign Chunks}}$$
-   Target constraint: $\text{FPR} \le 1.0\%$ on standard web, code, and documentation corpora.
+   - Target constraint: $\text{FPR} \le 1.0\%$.
+   - **Confidence Intervals**: Reported with Wilson score or Clopper-Pearson 95% confidence intervals, calculated and reported **separately** for:
+     1. Real-world genre-matched benign text (web pages, emails, QA contexts, tool outputs).
+     2. Hard negatives (instruction-dense guides, code pragmas, security blog prose).
+   - Test split requires $\ge 1,500$ benign samples to provide fine-grained statistical resolution ($\approx 0.067\%$).
 
 4. **Inference Latency**:
    - 50th, 95th, and 99th percentile latency (ms) per request under CPU and GPU (RTX 4050) environments.

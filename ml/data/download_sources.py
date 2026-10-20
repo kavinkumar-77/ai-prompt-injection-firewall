@@ -145,11 +145,10 @@ def main():
 
             for f in data_files:
                 path = f["path"]
-                url = (
-                    f"https://huggingface.co/datasets/{ds_id}/resolve/main/"
-                    f"{urllib.parse.quote(path)}?download=true"
-                )
+                url = f"https://huggingface.co/datasets/{ds_id}/resolve/main/{urllib.parse.quote(path) + '?download=true'}"  # noqa: E501
                 out_path = out_dir / path
+
+                # Check if it exists
                 if out_path.exists():
                     success, msg = True, "Already downloaded"
                 else:
