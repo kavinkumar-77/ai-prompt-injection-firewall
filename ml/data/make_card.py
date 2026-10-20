@@ -52,7 +52,7 @@ def generate_card():
     # Update Train Split
     content = re.sub(
         r"\*\*Train Split\*\*: .*",
-        f"**Train Split**: {train_tot:,} samples ({train_pos:,} positives, " \
+        f"**Train Split**: {train_tot:,} samples ({train_pos:,} positives, "
         f"{train_neg:,} negatives)",
         content,
     )

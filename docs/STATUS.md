@@ -1,74 +1,76 @@
 # Project Status: Project AEGIS
 
-## Honest Current State (Production-Grade Final Year Sprint)
+## Honest Current State (Phase 1 Complete)
 
 ### What Works (Completed & Operational)
-* **AI Defense Gateway & Semantic Analysis (FastAPI Backend)**:
-  - `POST /analyze-intent`: Dual-tier security pipeline combining deterministic obfuscation unwrappers with an **AI Semantic Vector Classifier** (`ai_engine.py`).
-  - **Multi-Tier Forensic Reasoning Engine**: Detailed audit report per scan including `attack_family`, `owasp_category`, `severity`, `forensic_breakdown` (Layers 1-4), `remediation`, and `unprotected_simulation` demonstrating model vulnerability when unshielded.
-  - Prototype-based cosine distance matching against attack families: Direct Override, Roleplay Jailbreak, Delimiter Smuggling (`<|im_start|>`, `[INST]`), and Markdown Image Exfiltration (`![leak](https://...)`).
-  - **Attention-Shift Divergence Probe**: Algorithmic metric measuring semantic deviation between system instructions and input directives.
-  - **Hard-Negative Suppression**: Explicit benign technical suppression to prevent false alarms on legitimate code/config snippets (e.g., Python warnings, SQL clauses).
-  - `POST /check-exfiltration`: Capability policy engine tracking high-taint tokens and intercepting outbound transmissions to untrusted domains.
-  - `POST /check-visual-similarity`: Bitwise Hamming distance comparison over structural blockhashes against brand templates to catch visual phishing clones.
-  - `POST /check-canary`: Output-side prompt leak detection identifying extracted system canary tokens (`CANARY_TOKEN:...`, `AEGIS-...-CONFIDENTIAL`), sanitizing responses, and logging telemetry.
-  - `GET /aegis-shield.js`: Standalone drop-in Web SDK serving in-app protection (PII redactor, exfiltration interceptor, canary observer) with zero extension required.
-  - `GET /threat-intel`: Real-time streaming threat feed and aggregated metrics.
-  - `POST /threat-intel/reset`: Reset endpoint for clearing telemetry prior to evaluation demonstrations.
-  - `GET /health`: Operational readiness endpoint.
-  - Static Demo Serving: `/demo` mount hosting **DocuMind AI** and visual clone simulation pages.
-  - SQLite threat logging database (`threats.db`) with SHA-256 payload masking for zero data exposure and temporal deduplication.
-  - 100% passing hermetic unit tests (28/28) in `backend/tests/`.
-
-* **Client-Side Defense Layer (Dual-Mode: Zero-Extension Web SDK + Chrome MV3)**:
-  - **Standalone Drop-In Web SDK (`demo/aegis-shield.js`)**: Single `<script>` tag providing in-app PII masking, outbound fetch/XHR interception, and DOM canary observation across any browser without loading Chrome extensions.
-  - **Live PII & Credential Redactor**: Real-time browser input interception automatically masking OpenAI keys (`sk-...`, `sk-proj-...`), GitHub tokens, AWS credentials, JWT bearer tokens, database connection strings, credit cards, and SSNs with visible `[🔒 REDACTED]` tags and security toasts.
-  - **System Prompt Canary Shield**: Live DOM observer tracking AI assistant responses (ChatGPT, Claude, custom chatbots) to block and sanitize leaked system prompts before display.
-  - **Full-Screen Phishing Interstitial**: High-impact warning overlay with animated similarity gauge and safety exit triggers when deceptive visual clones are detected.
-  - Dynamic DOM Protection & MutationObserver with self-mutation filtering.
-  - 100% passing Vitest test suite (37/37) in `extension/tests/`.
-
-* **Executive Monitoring Dashboard (React 18 + Vite + Tailwind CSS)**:
-  - **Redesigned Professional UI**: Cohesive slate canvas (`#0B0F17`), balanced 4-card KPI grid, soft status badges (emerald, rose, amber), and refined typography.
-  - **Live Attack & Defense Studio (`LiveAttackStudio.tsx`)**: Authentic attack showcase comparing unprotected LLM vulnerability (canary extraction, jailbreak execution) against AEGIS containment, complete with real-time PII redactor.
-  - **Interactive Docs & Reasoning System (`DocsAndReasoning.tsx`)**: Complete academic evaluation guide with defense architecture layers, threat taxonomy, OWASP LLM Top 10 compliance table, and mathematical equations (Cosine Similarity, Attention Divergence, Perceptual Blockhash).
-  - **Attack Matrix & Engine Status (`AttackMatrix.tsx`)**: Symmetrical distribution breakdown and hardware VRAM allocation profile (RTX 4050 6GB).
-  - **Threat Feed (`ThreatFeed.tsx`)**: Filterable audit log with search, category chips, JSON export, and detail drawer.
-  - **Security Audit Report Generator (`AuditReport.tsx`)**: Printable executive report mapped to OWASP LLM Top 10.
-  - Production build passing cleanly via `tsc && vite build` (240.20 kB bundle).
-
-* **Interactive Testing & Real-World Demonstration**:
-  - **DocuMind AI (`demo/documind/`)**: Realistic, Notion-style enterprise document intelligence SaaS app with embedded multi-vector attack scenarios (Indirect RAG Injection, Markdown Image Leak, Credential Beacon, and Google Login visual clone).
-  - `start_aegis.py`: Single-command launcher that initializes backend, dashboard, and manages background processes with crash detection.
-  - `demo/attack-simulator.html`: 6 standalone synthetic evaluation scenarios.
-  - `demo/phishing-google.html`: Structural visual clone template for perceptual hash matching.
-
-* **Dataset Curation & Validation Pipeline (`ml/data/`)**:
-  - Reproducible, config-driven compilation pipeline (`pipeline.py`, `sources.py`, `hard_negatives.py`, `splitter.py`, `cleaner.py`, `safety.py`).
-  - Preserves paired document groups (`group_id`) across splits so injection variants never contaminate clean evaluations.
-  - Zero PII scanner and exact/near deduplication engine.
-  - Raw data manifest (`data/raw/MANIFEST.json`) tracking verified source archives and SHA-256 hashes.
-  - 100% passing hermetic unit and integrity tests (11/11) in `ml/tests/`.
+* **Modular Pipeline Architecture (`backend/app/core/`)**:
+  - `AegisPipeline`: Sequential multi-layer execution pipeline (`normalizer` -> `rules` -> `classifier` -> `context` -> `decision`).
+  - Structured `LayerResult` with normalized risk scores, labels, and character `Evidence` spans for forensic UI rendering.
+  - `TrustSource` evaluation distinguishing `system`, `user`, `retrieved`, and `tool_output` with trust multipliers.
+  - `DecisionEngine` compiling layer results into `allow`, `warn`, `block`, and `redact` verdicts.
+* **Deterministic Security Rules Catalog (`backend/app/layers/rules.py`)**:
+  - `R-DELIM-001`: Chat template delimiter smuggling (`<|im_start|>`, `[INST]`, `<<SYS>>`, `Human/Assistant`).
+  - `R-EXFIL-001`: Covert markdown/HTML image link exfiltration with credentials or webhooks.
+  - `R-JAIL-001`: Roleplay jailbreak framing (DAN, Developer Mode, ethical filter bypass).
+  - `R-OVERRIDE-001`: Direct instruction overrides (`ignore previous instructions`, `system override:`).
+  - `R-SECRET-001`: High-entropy API keys (OpenAI `sk-...`, Anthropic `sk-ant-...`, AWS `AKIA...`, RSA private keys, JWT tokens).
+* **Text Normalization & Deobfuscation Layer (`backend/app/layers/normalizer.py`)**:
+  - Unicode NFKC normalization.
+  - Zero-width character stripping (U+200B-U+200D, U+FEFF, directional markers).
+  - Unicode tag character unwrap (U+E0000 - U+E007F).
+  - Base64, Hex, and URL percent-decoding with span tracking.
+* **Tool-Call Policy Engine (`backend/app/layers/toolcall.py`)**:
+  - Agent tool invocation validation intercepting dangerous shell commands (`rm -rf`, `curl | bash`, SQL drop) and forbidden tools.
+* **Modular API v1 Routers (`backend/app/api/v1/`)**:
+  - `POST /v1/scan`: Text payload scanning.
+  - `POST /v1/scan/tool-call`: Agent tool call scanning.
+  - `GET /health` and `GET /ready`: Operational and configuration readiness probes.
+  - `GET /v1/events`, `POST /v1/events/clear`, `GET /v1/events/stats`: Threat audit logs.
+  - `GET /v1/metrics`: Telemetry, uptime, latency percentiles, and verdict distribution.
+  - `GET /v1/policies`: Active security policies and gating thresholds.
+* **Observability & Logging (`backend/app/observability/`)**:
+  - Structured JSON logging to stdout with `ContextVar` request ID correlation (`X-Request-ID` propagation).
+  - Salted SHA-256 payload masking ensuring zero sensitive data exposure in logs.
+* **Backward Compatibility**:
+  - All legacy endpoints (`/analyze-intent`, `/check-exfiltration`, `/check-canary`, `/check-visual-similarity`, `/threat-intel`, `/aegis-shield.js`, `/demo`) retained and operational.
+  - Legacy TF-IDF proto-matcher moved to `backend/app/layers/legacy_tfidf.py` (marked deprecated as v1 baseline).
+  - Attention probe honestly renamed to `lexical_divergence` (syntactic keyword overlap).
+* **Quality Gates & Tooling**:
+  - 100% passing hermetic backend tests (73/73) in `backend/tests/`.
+  - 100% passing Chrome extension tests (37/37) in `extension/tests/`.
+  - Clean production build of React 18 dashboard (`tsc && vite build`).
+  - Strict linting and formatting with `ruff check .` (0 errors) and `ruff format .`.
+  - Type-checking with `mypy backend` (0 errors).
+  - Root `Makefile` with targets (`setup`, `lint`, `format`, `test`, `eval`, `up`, `demo`).
+  - Pre-commit with `detect-secrets`.
+  - GitHub Actions CI matrix for Python 3.11/3.12, Node 20, Ruff, Mypy, Pytest with coverage, Extension tests, and Dashboard build.
 
 ---
 
 ### What is a Placeholder (`placeholder_*`)
-* `placeholder_qwen_gguf_weights`: The heavy quantized model binary (`Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`) is not committed to git (satisfying rule 10). The backend runs the hermetic, high-speed `AIEngine` (Scikit-Learn TF-IDF vector similarity + attention shift probe) and deterministic unwrappers. If local GGUF weights are placed in `backend/models/`, `llama-cpp-python` automatically binds to them without configuration changes.
+* `placeholder_onnx_transformer_model`: The real trained transformer classifier (`microsoft/deberta-v3-small` or `all-MiniLM-L6-v2`) will be trained and exported to quantized ONNX int8 format in Phase 2. `ClassifierLayer` currently evaluates the TF-IDF prototype baseline.
+* `placeholder_qwen_gguf_weights`: Optional heavy LLM checkpoint for local offline inference.
 
 ---
 
 ### What is Missing
-* Full cloud multi-tenant synchronization (by design: Project AEGIS is architected as an edge-first, zero-cloud data leak solution).
-* Multi-page visual layout screenshot database beyond Google, Microsoft, and Okta templates.
+* **Phase 2**: Dataset build, training pipeline, ONNX export, and evaluation metrics (`ml/reports/metrics.json`).
+* **Phase 3**: Capability policy YAML schema and fine-grained context trust calibration.
+* **Phase 4**: OpenAI-compatible `/v1/chat/completions` proxy gateway.
+* **Phase 5**: Real Attack Lab with sandboxed local agent and live attack scenarios (firewall OFF vs ON).
+* **Phase 6 - 9**: Dashboard evaluation pages, red-team runner, docker-compose, and full documentation.
 
 ---
 
 ### What is Measured
-* **Detection Latency**: Backend semantic analysis completes in < 15ms.
-* **Vector Prototype Accuracy**: 100% test pass rate across attack prototypes and benign hard negatives.
-* **VRAM Usage**: 0 MB baseline under TF-IDF AI engine; under 1.2 GB when GGUF Q4_K_M is loaded, comfortably within 6 GB VRAM budget.
+* **Detection Latency**:
+  - Deterministic rules layer: < 0.1 ms.
+  - Normalizer layer: < 0.2 ms.
+  - Pipeline composite latency: < 5.0 ms.
 * **Quality Gates**:
   - `ruff check .`: 0 errors.
-  - `pytest` (`backend/tests` + `ml/tests`): 35/35 passed cleanly.
+  - `ruff format --check .`: Clean.
+  - `mypy backend`: 0 errors in 36 source files.
+  - `pytest backend/tests`: 73/73 passed cleanly.
   - `extension` (`npm test`): 37/37 passed.
-  - `dashboard` (`npm run build`): Clean production bundle in ~8.5s.
+  - `dashboard` (`npm run build`): Clean production bundle in ~14s.

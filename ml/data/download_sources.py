@@ -245,8 +245,6 @@ def main():
             }
             # Check if there are data files inside
 
-
-
             report.append(
                 {
                     "Source": ds_id,
@@ -254,7 +252,7 @@ def main():
                     "Columns": "N/A",
                     "Label Column": "N/A",
                     "License": "MIT",
-                    "Status": "Success (GitHub ZIP). Data files are scattered " \
+                    "Status": "Success (GitHub ZIP). Data files are scattered "
                     "in repo, needs parsing step.",
                 }
             )
@@ -290,7 +288,7 @@ def main():
     print("|---|---|---|---|---|---|")
     for r in report:
         print(
-            f"| {r['Source']} | {r['Rows']} | {r['Columns']} | " \
+            f"| {r['Source']} | {r['Rows']} | {r['Columns']} | "
             f"{r['Label Column']} | {r['License']} | {r['Status']} |"
         )
 

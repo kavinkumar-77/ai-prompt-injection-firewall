@@ -4,6 +4,7 @@ import base64
 import binascii
 import re
 import urllib.parse
+from typing import Literal
 
 from app.schemas import (
     IntentAnalysisRequest,
@@ -203,7 +204,8 @@ class IntentAnalyzer:
         # Classify attack family and severity
         attack_family = "Benign Task Alignment"
         owasp_category = "Compliant"
-        severity: str = "CLEAN"
+        verdict: Literal["SAFE", "SUSPICIOUS", "INJECTION"] = "SAFE"
+        severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "CLEAN"] = "CLEAN"
         remediation = "No remediation needed. Request conforms to baseline security policies."
         unprotected_sim: dict[str, str] = {
             "simulated_output": "Processing request normally according to developer guidelines.",
@@ -279,7 +281,8 @@ class IntentAnalyzer:
                     "unprotected_status": "EXPLOITED_CRITICAL",
                 }
             elif obf_detected:
-                attack_family = f"Obfuscated Payload Smuggling ({obf_type.upper()})"
+                obf_tag = (obf_type or "ENCODED").upper()
+                attack_family = f"Obfuscated Payload Smuggling ({obf_tag})"
                 owasp_category = "OWASP LLM01: Prompt Injection (Obfuscated Directive)"
                 remediation = (
                     "Decode multi-layer encodings prior to semantic analysis, "
@@ -333,7 +336,8 @@ class IntentAnalyzer:
             verdict = "SUSPICIOUS"
             divergence = max(divergence, 0.65)
             severity = "HIGH"
-            attack_family = f"Unsanctioned Obfuscation ({obf_type.upper()})"
+            obf_tag = (obf_type or "ENCODED").upper()
+            attack_family = f"Unsanctioned Obfuscation ({obf_tag})"
             owasp_category = "OWASP LLM01: Obfuscation Anomaly"
             remediation = (
                 "Require explicit plain-text confirmation or strip encoded block before processing."
@@ -358,9 +362,7 @@ class IntentAnalyzer:
             severity = "MEDIUM"
             attack_family = "High Attention-Shift Divergence"
             owasp_category = "OWASP LLM01: Directive Deviation"
-            remediation = (
-                "Flag input for human review and reinforce system instruction priority."
-            )
+            remediation = "Flag input for human review and reinforce system instruction priority."
             unprotected_sim = {
                 "simulated_output": (
                     "The model's attention is pulled away from primary task, increasing "

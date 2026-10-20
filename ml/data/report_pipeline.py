@@ -14,7 +14,7 @@ for split_name, split_rows in splits.items():
         print(f"{split_name} | label={k[0]} | kind={k[1]}: {v}")
 
 print(
-    "\n--- b) Test negatives: real benign vs hard negatives, " \
+    "\n--- b) Test negatives: real benign vs hard negatives, "
     "and hard negatives per category per split ---"
 )
 test_neg = [r for r in splits.get("test", []) if r["label"] == 0]

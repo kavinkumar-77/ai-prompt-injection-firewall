@@ -396,6 +396,6 @@ def test_no_unmanifested_real_sources() -> None:
             # If it's not synthetic, it must be in the manifest
             if not source.startswith("synthetic_"):
                 assert source in manifest, (
-                    f"Record uses real dataset source '{source}' " \
+                    f"Record uses real dataset source '{source}' "
                     "but it is not found in data/raw/MANIFEST.json!"
                 )

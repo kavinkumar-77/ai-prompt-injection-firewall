@@ -58,6 +58,7 @@ def log_threat(event: ThreatEvent, db_path: Path | str = DB_PATH) -> None:
         if recent:
             try:
                 from datetime import datetime
+
                 last_dt = datetime.fromisoformat(recent[1].replace("Z", "+00:00"))
                 curr_dt = datetime.fromisoformat(event.timestamp.replace("Z", "+00:00"))
                 diff_sec = abs((curr_dt - last_dt).total_seconds())

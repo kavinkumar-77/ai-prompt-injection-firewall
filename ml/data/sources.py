@@ -145,7 +145,7 @@ BIPIA_WEB_CONTEXTS = [
 BIPIA_QA_CONTEXTS = [
     "Q: What is the capital of France?\nA: The capital of France is Paris.",
     "Q: How do solar panels work?\nA: Solar panels convert sunlight into electricity.",
-    "Q: Explain the theory of relativity briefly.\n" \
+    "Q: Explain the theory of relativity briefly.\n"
     "A: It describes gravity as the curvature of spacetime.",
     "Q: Who wrote Hamlet?\nA: William Shakespeare wrote Hamlet.",
 ]
@@ -343,8 +343,6 @@ def load_deepset_samples(cap: int = 660, seed: int = 42) -> list[dict[str, Any]]
     rng = random.Random(seed)
     records: list[dict[str, Any]] = []
 
-
-
     pos_combos = [f"{a} {t}." for a, t in itertools.product(DEEPSET_ACTIONS, DEEPSET_TARGETS)]
     neg_combos = [
         f"{t} Please provide an in-depth, structured explanation." for t in DEEPSET_BENIGN_TOPICS
@@ -412,8 +410,6 @@ def load_jackhhao_samples(cap: int = 1000, seed: int = 42) -> list[dict[str, Any
     """Loads jackhhao/jailbreak-classification samples mapped to kind: direct."""
     rng = random.Random(seed + 1)
     records: list[dict[str, Any]] = []
-
-
 
     pos_combos = [f"{p} {pr}" for p, pr in itertools.product(JACKHHAO_PERSONAS, JACKHHAO_PROMPTS)]
     neg_combos = list(JACKHHAO_BENIGN)
@@ -726,8 +722,6 @@ def load_genre_matched_benign(
         )
 
     return records
-
-
 
 
 OASST_SUBJECTS = [

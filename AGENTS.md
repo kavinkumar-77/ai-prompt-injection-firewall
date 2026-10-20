@@ -1,55 +1,28 @@
 # Agent Collaboration Guidelines
 
 These guidelines define operational, architectural, and security boundaries when working on the **AI Defense Gateway against Prompt Injection** project.
+See `docs/PLAN.md` for the full Project AEGIS Production-Grade Upgrade Plan.
 
-## Core Rules
+## Core Non-Negotiable Rules (from docs/PLAN.md §1)
 
-1. **Zero Data Exposure in Logs**:
-   - Never log raw user input text, page content payloads, or real personal data.
-   - Always hash, mask, or tokenize identifiers in log messages and debugging output.
+1. **Honesty:** No marketing claims without a measurement. Heuristics are called heuristics. Remove or rename anything that "simulates" a technique (e.g. the attention-shift probe is a lexical divergence heuristic, not model attention).
+2. **No Raw User Data in Logs or DB:** Prompts, pages and identifiers are SHA-256 hashed or masked before storage.
+3. **Offline-First / Hermetic Tests:** Tests must never touch the network or require model downloads. Use tiny fixtures and test doubles. Real-model tests are marked `@pytest.mark.model` and skipped by default in CI.
+4. **Resilient Asset Management:** Network is unreliable on dev machine. All downloads go through `scripts/fetch_assets.py` with backoff retries, support for `AEGIS_ASSET_DIR`, and SHA-256 verification against manifests. Nothing else downloads assets directly.
+5. **Hardware Budget:** 16 GB RAM, RTX 4050 6 GB VRAM, Windows 11 primary, Linux/macOS cross-compatible. Training must fit in 6 GB VRAM (fp16, small batch), inference on CPU.
+6. **No Secrets in Git:** `.env` ignored, `.env.example` complete. Pre-commit includes secret scanning.
+7. **No Binaries in Git:** Model weights and datasets are gitignored and fetched/built by scripts. Only manifests, configs, and small test fixtures are committed.
+8. **Typed and Linted:** `ruff` (lint + format), `mypy` on `backend/` and `aegis_client/`, `tsc --noEmit` on TypeScript packages. All must pass in CI.
+9. **Every Phase Ends Green:** Lint, type-check, tests, builds. If a gate cannot pass, stop and report instead of disabling it.
+10. **Conventional Commits:** (`feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, `chore:`), small focused commits, one phase at a time. Never use `git push --force`, `--amend`, or `git add .`.
 
-2. **No Real Secrets in the Repository**:
-   - Never commit API keys, tokens, passwords, or production credentials.
-   - Use `.env.example` to define configuration schema, and read values from local `.env` or system environment variables.
+## Integrity and Quality Gates
 
-3. **Hermetic Unit Tests**:
-   - No external network calls in unit tests.
-   - Mock all HTTP clients, remote model inference calls, and external services using test fixtures.
-
-4. **Quality Gates & Verification**:
-   - Every new feature or endpoint must include automated test coverage.
-   - Always run `ruff check .` and `pytest` locally and ensure they pass cleanly before concluding any task.
-
-5. **Iterative Cadence & Review**:
-   - Work on one small, focused task at a time.
-   - Present concise diffs and clear summaries for review before proceeding to subsequent tasks.
-   - Keep agent prompts, explanations, and diffs small and focused.
-
-6. **Machine Learning Development Boundary**:
-   - Do **NOT** implement ML training or evaluation code unless the user explicitly requests it.
-   - Model training, dataset preparation, and metric evaluations are led by the project author. Focus agent contributions on infrastructure, inference wrappers, schemas, and serving integration.
-
-7. **Config-Driven Experiments & Reproducibility**:
-   - All machine learning runs, augmentations, and evaluation pipelines must be strictly configuration-driven (YAML/JSON) with explicit, fixed random seeds (`random_seed: 42`).
-
-8. **Strict Train/Val/Test Separation**:
-   - Never train or tune hyperparameters on the test split.
-   - Evaluation splits must remain strictly unseen, isolated by attack family and time to test true out-of-distribution generalization.
-
-9. **Experiment Tracking**:
-   - Log every experiment run (configuration snapshot, metric results, evaluation timestamps, and Git commit hash) to a local structured file under `ml/experiments/` (e.g., `ml/experiments/runs.jsonl`).
-
-10. **Dataset and Model Weight Isolation**:
-    - Raw datasets, annotated corpuses, and model weight checkpoints (`*.bin`, `*.pt`, `*.onnx`, `*.safetensors`, `*.pkl`) must stay out of Git.
-    - Ensure `.gitignore` rules prevent accidental commits of large binary files or datasets.
-
-## Integrity and quality gates
-
-1. Never label generated or hand-written data with the name of a real dataset. Rows whose source is a real dataset must come from files in data/raw/ recorded in data/raw/MANIFEST.json (with sha256). Generated data must use a source name starting with "synthetic_" and be described as synthetic.
-2. Never hardcode metrics or results in code or docs. Every number in docs or reports must be produced by a script in ml/eval/ that writes results/*.json, and docs must be generated from those files.
-3. Never weaken, skip or delete a test to make it pass. If a test is wrong, explain why and ask me.
+1. Never label generated or hand-written data with the name of a real dataset. Rows whose source is a real dataset must come from files in `data/raw/` recorded in `data/raw/MANIFEST.json` (with sha256). Generated data must use a source name starting with "synthetic_" and be described as synthetic.
+2. Never hardcode metrics or results in code or docs. Every number in docs or reports must be produced by scripts that write results JSONs, and docs must be generated from those files.
+3. Never weaken, skip or delete a test to make it pass. If a test is wrong, explain why and report.
 4. Never use git push --force, --amend or `git add .`. Add named files and run `git status` before each commit. If a network call fails twice, stop and report instead of retrying or switching approach.
-5. Anything not fully implemented must be named placeholder_* and listed in docs/STATUS.md. Keep docs/STATUS.md updated after every task: what works, what is a placeholder, what is missing, what is measured. Be honest.
+5. Anything not fully implemented must be named `placeholder_*` and listed in `docs/STATUS.md`. Keep `docs/STATUS.md` updated after every task.
 6. Before declaring a task done: run ruff and pytest, plus the audit scripts that apply, and paste a short summary.
-7. Add a test that no record with a real-dataset source name exists without a matching entry in the manifest.
-8. Do not write throwaway regex-patch scripts; edit files directly.
+7. Do not write throwaway regex-patch scripts; edit files directly.
+8. Execute strictly **one phase at a time** as outlined in `docs/PLAN.md`. Stop and report after completing each phase.

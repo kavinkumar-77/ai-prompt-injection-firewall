@@ -1,18 +1,28 @@
 """FastAPI Gateway for Project AEGIS (Prompt-Injection & Data-Leak Firewall)."""
 
+from __future__ import annotations
+
 import hashlib
 import os
 import re
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from typing import Literal
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.api.v1.events import router as events_router
+from app.api.v1.health import router as health_router
+from app.api.v1.metrics import router as metrics_router
+from app.api.v1.policies import router as policies_router
+from app.api.v1.scan import router as scan_router
+from app.config import settings
 from app.database import (
     clear_all_threats,
     get_recent_threats,
@@ -21,6 +31,7 @@ from app.database import (
     log_threat,
 )
 from app.model_manager import analyzer
+from app.observability.logging import logger, request_id_ctx, setup_structured_logging
 from app.schemas import (
     CanaryCheckRequest,
     CanaryCheckResponse,
@@ -34,19 +45,40 @@ from app.schemas import (
 )
 
 
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    """Binds unique request ID to logging context and response headers."""
+
+    async def dispatch(self, request: Request, call_next):
+        req_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+        token = request_id_ctx.set(req_id)
+        try:
+            response: Response = await call_next(request)
+            response.headers["x-request-id"] = req_id
+            return response
+        finally:
+            request_id_ctx.reset(token)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager to initialize resources."""
+    setup_structured_logging()
     init_db()
+    logger.info(
+        f"Initialized {settings.app_name} v{settings.app_version} in {settings.app_env} mode"
+    )
     yield
 
 
 app = FastAPI(
-    title="Project AEGIS Security Gateway",
+    title=settings.app_name,
     description="Local-first AI defense gateway against prompt injection and data exfiltration.",
-    version="1.0.0",
+    version=settings.app_version,
     lifespan=lifespan,
 )
+
+# Request ID correlation middleware
+app.add_middleware(RequestIdMiddleware)
 
 # Enable CORS for dashboard, browser extension, and test harness
 app.add_middleware(
@@ -57,7 +89,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount demo folder for interactive presentation (DocuMind AI & Attack Center)
+# Mount API v1 routers
+app.include_router(health_router)
+app.include_router(scan_router)
+app.include_router(events_router)
+app.include_router(metrics_router)
+app.include_router(policies_router)
+
+# Mount demo folder for interactive presentation
 demo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "demo"))
 if os.path.exists(demo_dir):
     app.mount("/demo", StaticFiles(directory=demo_dir, html=True), name="demo")
@@ -82,12 +121,6 @@ SUSPICIOUS_INDICATORS = [
     "pastebin.com",
     "ngrok-free.app",
 ]
-
-
-@app.get("/health", tags=["System"])
-def health_check() -> dict[str, str]:
-    """Health check endpoint to verify backend operational readiness."""
-    return {"status": "ok"}
 
 
 @app.get("/aegis-shield.js", tags=["System"])
@@ -153,6 +186,7 @@ def check_exfiltration_endpoint(
         # Block if tainted data is bound for an untrusted or suspicious destination
         should_block = (request.taint_level == "HIGH" and not is_allowed) or is_suspicious_domain
 
+        risk: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
         if should_block:
             reason = (
                 f"Tainted credential/token data (hash {request.payload_hash[:10]}...) "
@@ -329,4 +363,3 @@ def check_canary_endpoint(request: CanaryCheckRequest) -> CanaryCheckResponse:
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Canary check failed: {str(e)}") from e
-
