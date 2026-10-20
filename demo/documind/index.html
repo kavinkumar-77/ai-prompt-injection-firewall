@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuMind AI — Enterprise Document Intelligence</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233B82F6'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">D</div>
+        <span class="brand-name">DocuMind AI</span>
+        <span class="brand-badge">PRO</span>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-item active">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Synthesis Lab</span>
+        </div>
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          <span>Audit History</span>
+        </div>
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <span>Knowledge Base</span>
+        </div>
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </div>
+      </nav>
+
+      <div>
+        <div class="sidebar-section-title">Recent Documents</div>
+        <div class="doc-history">
+          <div class="doc-item">Q3 Enterprise Feedback.md</div>
+          <div class="doc-item">Auth Architecture Spec v4.docx</div>
+          <div class="doc-item">Agent Guidelines RAG.txt</div>
+          <div class="doc-item">Security Whitepaper 2026.pdf</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="model-info">
+          <span class="model-name">DocuMind-Large-v3</span>
+          <span class="model-status">
+            <span class="pulse-dot"></span> Online
+          </span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 11px;">
+          Latency: <span id="latency-metric">114ms</span> &bull; 8k Context Window
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-title-wrap">
+          <h1>Document Synthesis & Knowledge Extraction</h1>
+          <p>Contextual summarization pipeline powered by transformer neural attention</p>
+        </div>
+
+        <div class="header-actions">
+          <select id="sample-select" class="btn btn-secondary" style="outline: none;">
+            <option value="feedback">Preset: Q3 Feedback (RAG Injected)</option>
+            <option value="security_spec">Preset: API Security Spec (PII Secrets)</option>
+            <option value="rag_poison">Preset: System Delimiter Smuggling</option>
+          </select>
+
+          <button id="clear-btn" class="btn btn-secondary">Clear</button>
+
+          <button id="summarize-btn" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Summarize with AI</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <!-- Input Document Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <span>Source Document</span>
+            </div>
+            <div class="panel-tools">
+              <span id="word-count" class="tool-badge">0 words</span>
+              <span class="tool-badge">Markdown / Plaintext</span>
+            </div>
+          </div>
+          <div class="editor-area">
+            <textarea
+              id="doc-input"
+              class="doc-textarea"
+              placeholder="Paste or type document text here to analyze and summarize..."
+              spellcheck="false"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Output Synthesis Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <span>Executive Synthesis</span>
+            </div>
+            <div class="panel-tools">
+              <span class="tool-badge">Extractive Attention</span>
+              <span class="tool-badge">Strict JSON Output</span>
+            </div>
+          </div>
+          <div id="summary-output" class="summary-output">
+            <div class="summary-placeholder">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <p>Click "Summarize with AI" above to generate a synthesized executive report.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Status Bar -->
+  <footer class="status-bar">
+    <div class="status-left">
+      <div class="status-indicator ready">
+        <span class="pulse-dot"></span>
+        <span>Neural Inference Engine Ready</span>
+      </div>
+      <span>&bull;</span>
+      <span>Cluster: us-east-inference-1</span>
+    </div>
+    <div class="status-right">
+      <span>Zero Retention Policy</span>
+      <span>&bull;</span>
+      <span>TLS 1.3 Strict</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

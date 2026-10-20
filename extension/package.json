@@ -1,9 +1,9 @@
 {
   "name": "prompt-firewall-extension",
-  "version": "0.1.0",
-  "description": "Chrome MV3 Extension for AI Prompt-Injection & Data-Leak Firewall",
+  "version": "1.0.0",
+  "description": "Chrome MV3 Extension for Project AEGIS AI Security Gateway",
   "scripts": {
-    "build": "tsc --noEmit && esbuild src/content/content.ts --bundle --outfile=dist/content/content.js && esbuild src/popup/popup.ts --bundle --outfile=dist/popup/popup.js",
+    "build": "tsc --noEmit && esbuild src/content/content.ts --bundle --outfile=dist/content/content.js && esbuild src/background/background.ts --bundle --outfile=dist/background/background.js && esbuild src/popup/popup.ts --bundle --outfile=dist/popup/popup.js",
     "test": "vitest run"
   },
   "devDependencies": {

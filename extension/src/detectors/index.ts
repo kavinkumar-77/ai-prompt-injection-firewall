@@ -2,6 +2,7 @@
  * Main entry point for hidden-text detector.
  */
 
+import { detectAdvancedInjections } from "./advancedInjections";
 import { detectAttributeInjections } from "./attributeInjections";
 import { detectColorContrast } from "./colorContrast";
 import { detectCssHidden } from "./cssHidden";
@@ -11,7 +12,10 @@ import { DetectorOptions, Finding, FindingType, Severity } from "./types";
 import { detectUnicodeTricks } from "./unicodeTricks";
 
 export * from "./types";
+export * from "./piiRedactor";
+export * from "./canaryShield";
 export {
+  detectAdvancedInjections,
   detectAttributeInjections,
   detectColorContrast,
   detectCssHidden,
@@ -38,6 +42,7 @@ export function scanDocument(
     ...detectHtmlComments(root, options),
     ...detectUnicodeTricks(root, options),
     ...detectAttributeInjections(root, options),
+    ...detectAdvancedInjections(root, options),
   ];
 
   return findings;

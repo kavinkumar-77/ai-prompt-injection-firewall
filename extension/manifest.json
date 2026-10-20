@@ -1,20 +1,29 @@
 {
   "manifest_version": 3,
-  "name": "AI Prompt-Injection and Data-Leak Firewall",
-  "version": "0.1.0",
-  "description": "Scans web pages for hidden prompt injections and prevents data leakage to AI tools.",
+  "name": "Project AEGIS: Prompt-Injection & Data-Leak Firewall",
+  "version": "1.0.0",
+  "description": "Real-time client-side defense against obfuscated prompt injections, data exfiltration, and visual phishing.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting"
   ],
+  "background": {
+    "service_worker": "dist/background/background.js"
+  },
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_title": "Prompt Firewall"
+    "default_title": "Project AEGIS Shield"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*",
+        "http://localhost:8000/*",
+        "http://127.0.0.1:8000/*"
+      ],
       "js": ["dist/content/content.js"],
       "run_at": "document_idle"
     }

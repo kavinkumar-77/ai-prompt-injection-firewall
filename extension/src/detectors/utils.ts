@@ -9,9 +9,10 @@ const INJECTION_PATTERNS = [
   /you\s+are\s+now\s+(in\s+)?(developer\s+mode|dan|unrestricted)/i,
   /assistant:\s*/i,
   /new\s+instructions?:/i,
-  /send\s+(auth|cookie|token|data|password)\s+to/i,
+  /send\s+(auth|cookie|token|data|password|secret)\s+to/i,
   /bypass\s+safety/i,
-  /exfiltrat/i,
+  /exfiltrat(e|ing|ion)?\s+(auth|cookie|token|data|password|secret|key|credential|all|conversation)/i,
+  /steal\s+(auth|cookie|token|data|password|secret|key|credential|all)/i,
 ];
 
 /**

@@ -40,6 +40,14 @@ lerna-debug.log*
 dashboard/dist/
 extension/dist/
 
+# Logs & Diagnostics
+logs/
+*.log
+*report*.txt
+
+# Datasets & Processed Data
+data/processed/
+
 # SQLite & Databases
 *.sqlite
 *.sqlite3
@@ -71,4 +79,3 @@ ml/models/
 *.sublime-workspace
 .DS_Store
 Thumbs.db
-

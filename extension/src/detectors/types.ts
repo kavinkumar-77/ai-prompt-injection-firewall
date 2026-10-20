@@ -15,7 +15,10 @@ export type FindingType =
   | "unicode-tag-characters"
   | "suspicious-alt-text"
   | "suspicious-title-attribute"
-  | "suspicious-aria-label";
+  | "suspicious-aria-label"
+  | "markdown-image-exfiltration"
+  | "chat-template-delimiter"
+  | "indirect-rag-poison";
 
 export type Severity = "high" | "medium" | "low";
 
