@@ -38,7 +38,7 @@ jobs:
           cd ..
 
       - name: Build Gateway Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
@@ -46,7 +46,7 @@ jobs:
           tags: aegis-gateway:${{ github.ref_name }}
 
       - name: Build Dashboard Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: dashboard/Dockerfile
