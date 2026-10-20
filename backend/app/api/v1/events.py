@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.database import clear_all_threats, get_recent_threats, get_threat_stats
+from scripts.seed_demo_data import seed_demo_events
 
 router = APIRouter(prefix="/v1/events", tags=["Events"])
 
@@ -29,3 +30,14 @@ def clear_events() -> dict[str, str]:
     """Clears all stored historical threat events."""
     clear_all_threats()
     return {"status": "cleared", "message": "Threat events successfully cleared."}
+
+
+@router.post("/seed")
+def seed_events() -> dict[str, Any]:
+    """Seeds labeled demo events (source: demo_seed) for initial UI demonstration."""
+    count = seed_demo_events()
+    return {
+        "status": "seeded",
+        "count": count,
+        "message": f"Successfully seeded {count} labeled demo events.",
+    }

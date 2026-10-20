@@ -4,6 +4,24 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-20
+
+### Added
+- **Operator Dashboard Overhaul (`dashboard/`, `backend/app/api/v1/eval.py`, `scripts/seed_demo_data.py`)**:
+  - Rebuilt the security operator console in React 18, TypeScript (strict), Vite, and Tailwind CSS.
+  - Replaced legacy simulation badges and hardcoded mock data with 7 production-grade views powered exclusively by real backend telemetry:
+    - **OverviewPage**: Real-time request volumes, containment rate, P95 latency (&lt; 1.5 ms), live engine status (ONNX CPU inference, circuit breaker), interactive verdict distribution, and live threat feed.
+    - **PlaygroundPage**: Interactive text scanner with trust-level boundary configuration (`system`, `user`, `retrieved`, `tool_output`), side-by-side policy compare mode (evaluating strict vs balanced/lenient), evidence span highlighter for exact character offsets, and 6-layer forensic breakdown.
+    - **AttackLabPage**: Multi-turn agent arena running side-by-side live execution (Without AEGIS vs With AEGIS) across 12 scenarios, automated oracle verification, honeytoken status, and sandbox outbox inspection.
+    - **EventsPage**: Paginated, searchable cryptographic audit log (`GET /v1/events`). Masked SHA-256 payload digests, verdict filtering, event detail drawer, and CSV/JSON export.
+    - **PoliciesPage**: Dynamic threshold management, one-click preset switching (`strict`, `balanced`, `lenient`), policy audit trail (`GET /v1/policies/audit/history`), and agent capability YAML policy viewer.
+    - **EvaluationPage**: High-precision evaluation dashboard rendering measured numbers from `ml/reports/metrics.json` and `lab/reports/summary.json` (Holdout precision 100%, 0/600 hard-negative FPR, 2,550 TN confusion matrix, operating points table, CPU latency benchmark, and 12-scenario attack lab results).
+    - **AuditReportPage**: Executive compliance report with print stylesheet (`@media print`), OWASP Top 10 for LLM Applications (2025) compliance matrix, and cryptographically verified sign-off.
+  - Added `scripts/seed_demo_data.py` and `POST /v1/events/seed` providing a one-click seed of 5 representative security events explicitly tagged with `is_demo_seed: True` and `source: demo_seed`.
+  - Added `GET /v1/eval/metrics` and `GET /v1/eval/lab` endpoints in `backend/app/api/v1/eval.py`.
+- **Cleanup**:
+  - Purged all legacy hardcoded components (`AttackMatrix`, `DocsAndReasoning`, `GuardrailsMatrix`, `LiveAttackStudio`, `SandboxInspector`, `ThreatFeed`) and obsolete hooks.
+
 ## [0.5.0] - 2026-10-20
 
 ### Added

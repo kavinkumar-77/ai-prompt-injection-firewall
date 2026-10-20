@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.api.v1.eval import router as eval_router
 from app.api.v1.events import router as events_router
 from app.api.v1.gateway import router as gateway_router
 from app.api.v1.health import router as health_router
@@ -101,6 +102,7 @@ app.include_router(metrics_router)
 app.include_router(policies_router)
 app.include_router(gateway_router)
 app.include_router(lab_router)
+app.include_router(eval_router)
 
 # Mount demo folder for interactive presentation
 demo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "demo"))
