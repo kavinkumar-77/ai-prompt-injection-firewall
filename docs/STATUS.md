@@ -5,39 +5,37 @@
 ### What Works (Completed & Operational)
 * **AI Defense Gateway & Semantic Analysis (FastAPI Backend)**:
   - `POST /analyze-intent`: Dual-tier security pipeline combining deterministic obfuscation unwrappers with an **AI Semantic Vector Classifier** (`ai_engine.py`).
+  - **Multi-Tier Forensic Reasoning Engine**: Detailed audit report per scan including `attack_family`, `owasp_category`, `severity`, `forensic_breakdown` (Layers 1-4), `remediation`, and `unprotected_simulation` demonstrating model vulnerability when unshielded.
   - Prototype-based cosine distance matching against attack families: Direct Override, Roleplay Jailbreak, Delimiter Smuggling (`<|im_start|>`, `[INST]`), and Markdown Image Exfiltration (`![leak](https://...)`).
   - **Attention-Shift Divergence Probe**: Algorithmic metric measuring semantic deviation between system instructions and input directives.
   - **Hard-Negative Suppression**: Explicit benign technical suppression to prevent false alarms on legitimate code/config snippets (e.g., Python warnings, SQL clauses).
   - `POST /check-exfiltration`: Capability policy engine tracking high-taint tokens and intercepting outbound transmissions to untrusted domains.
   - `POST /check-visual-similarity`: Bitwise Hamming distance comparison over structural blockhashes against brand templates to catch visual phishing clones.
   - `POST /check-canary`: Output-side prompt leak detection identifying extracted system canary tokens (`CANARY_TOKEN:...`, `AEGIS-...-CONFIDENTIAL`), sanitizing responses, and logging telemetry.
+  - `GET /aegis-shield.js`: Standalone drop-in Web SDK serving in-app protection (PII redactor, exfiltration interceptor, canary observer) with zero extension required.
   - `GET /threat-intel`: Real-time streaming threat feed and aggregated metrics.
   - `POST /threat-intel/reset`: Reset endpoint for clearing telemetry prior to evaluation demonstrations.
   - `GET /health`: Operational readiness endpoint.
   - Static Demo Serving: `/demo` mount hosting **DocuMind AI** and visual clone simulation pages.
   - SQLite threat logging database (`threats.db`) with SHA-256 payload masking for zero data exposure and temporal deduplication.
-  - 100% passing hermetic unit tests (24/24) in `backend/tests/`.
+  - 100% passing hermetic unit tests (28/28) in `backend/tests/`.
 
-* **Client-Side Defense Layer (Chrome Extension - Manifest V3 + TypeScript)**:
-  - **Live PII & Credential Redactor (`piiRedactor.ts`)**: Real-time browser input interception automatically masking OpenAI keys (`sk-...`, `sk-proj-...`), GitHub tokens, AWS credentials, JWT bearer tokens, database connection strings, credit cards, and SSNs with visible `[🔒 REDACTED]` tags and security toasts.
-  - **System Prompt Canary Shield (`canaryShield.ts`)**: Live DOM observer tracking AI assistant responses (ChatGPT, Claude, custom chatbots) to block and sanitize leaked system prompts before display.
-  - **Full-Screen Phishing Interstitial (`phishingInterstitial.ts`)**: High-impact, full-screen warning overlay with animated similarity gauge and safety exit triggers when deceptive visual clones are detected.
-  - **Advanced Injection Scanners**: Real-world RAG poisoning directives, delimiters (`<|im_start|>`, `[INST]`, `<<SYS>>`), and markdown exfiltration syntax.
-  - **Dynamic DOM Protection**: Real-time `MutationObserver` scanning dynamically injected or lazy-loaded payloads with self-mutation filtering.
-  - **AI Assistant Shield**: Intercepts `paste` and `input` events on LLM chat interfaces to detect injected prompts before submission.
-  - **Outbound Exfiltration Interceptor**: Monkey-patches outbound `fetch`, `XMLHttpRequest`, and form submissions to evaluate taint against the backend gateway.
-  - DOM Taint Tracking engine: Tags sensitive credentials/tokens with `data-taint-level="HIGH"`.
-  - In-page floating alert banners (`#aegis-security-banner`) for real-time threat warnings.
-  - Clean build via esbuild (`dist/content/content.js` [52.2kb], `dist/background/background.js`, `dist/popup/popup.js`).
+* **Client-Side Defense Layer (Dual-Mode: Zero-Extension Web SDK + Chrome MV3)**:
+  - **Standalone Drop-In Web SDK (`demo/aegis-shield.js`)**: Single `<script>` tag providing in-app PII masking, outbound fetch/XHR interception, and DOM canary observation across any browser without loading Chrome extensions.
+  - **Live PII & Credential Redactor**: Real-time browser input interception automatically masking OpenAI keys (`sk-...`, `sk-proj-...`), GitHub tokens, AWS credentials, JWT bearer tokens, database connection strings, credit cards, and SSNs with visible `[🔒 REDACTED]` tags and security toasts.
+  - **System Prompt Canary Shield**: Live DOM observer tracking AI assistant responses (ChatGPT, Claude, custom chatbots) to block and sanitize leaked system prompts before display.
+  - **Full-Screen Phishing Interstitial**: High-impact warning overlay with animated similarity gauge and safety exit triggers when deceptive visual clones are detected.
+  - Dynamic DOM Protection & MutationObserver with self-mutation filtering.
   - 100% passing Vitest test suite (37/37) in `extension/tests/`.
 
 * **Executive Monitoring Dashboard (React 18 + Vite + Tailwind CSS)**:
-  - **Security Audit Report Generator (`AuditReport.tsx`)**: One-click printable PDF-style executive report featuring OWASP LLM Top 10 compliance mapping, attack chronological timeline, risk score gauges, and defense architecture overview.
-  - Executive UI (Linear/CrowdStrike style) with clean tabbed navigation: **Overview**, **AI Sandbox Lab**, **Threat Feed**, and **Guardrails Matrix**.
-  - **AI Sandbox Inspector**: Live interactive security sandbox for testing custom prompts, delimiter smuggling, and hard negatives with immediate AI vector breakdowns and confidence gauges.
-  - **Guardrails & Hardware Matrix**: Visual status of defense layers and RTX 4050 6GB VRAM memory allocation.
-  - **Threat Feed**: Filterable audit table (Injections, Exfiltrations, Phishing, System Prompt Leaks) with search, JSON export, and detail modal.
-  - Production build passing cleanly via `tsc && vite build` (202.88 kB bundle).
+  - **Redesigned Professional UI**: Cohesive slate canvas (`#0B0F17`), balanced 4-card KPI grid, soft status badges (emerald, rose, amber), and refined typography.
+  - **Live Attack & Defense Studio (`LiveAttackStudio.tsx`)**: Authentic attack showcase comparing unprotected LLM vulnerability (canary extraction, jailbreak execution) against AEGIS containment, complete with real-time PII redactor.
+  - **Interactive Docs & Reasoning System (`DocsAndReasoning.tsx`)**: Complete academic evaluation guide with defense architecture layers, threat taxonomy, OWASP LLM Top 10 compliance table, and mathematical equations (Cosine Similarity, Attention Divergence, Perceptual Blockhash).
+  - **Attack Matrix & Engine Status (`AttackMatrix.tsx`)**: Symmetrical distribution breakdown and hardware VRAM allocation profile (RTX 4050 6GB).
+  - **Threat Feed (`ThreatFeed.tsx`)**: Filterable audit log with search, category chips, JSON export, and detail drawer.
+  - **Security Audit Report Generator (`AuditReport.tsx`)**: Printable executive report mapped to OWASP LLM Top 10.
+  - Production build passing cleanly via `tsc && vite build` (240.20 kB bundle).
 
 * **Interactive Testing & Real-World Demonstration**:
   - **DocuMind AI (`demo/documind/`)**: Realistic, Notion-style enterprise document intelligence SaaS app with embedded multi-vector attack scenarios (Indirect RAG Injection, Markdown Image Leak, Credential Beacon, and Google Login visual clone).

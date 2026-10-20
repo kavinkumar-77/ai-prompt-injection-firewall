@@ -60,6 +60,30 @@ class IntentAnalysisResponse(BaseModel):
         default_factory=dict,
         description="Detailed vector similarity, attention shifts, and attack vectors.",
     )
+    attack_family: str | None = Field(
+        default=None,
+        description="Categorized attack family (e.g. Indirect RAG Injection, Delimiter Smuggling).",
+    )
+    owasp_category: str | None = Field(
+        default=None,
+        description="OWASP Top 10 for LLMs alignment category.",
+    )
+    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "CLEAN"] = Field(
+        default="CLEAN",
+        description="Threat severity classification.",
+    )
+    forensic_breakdown: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Structured multi-tier forensic evidence trail.",
+    )
+    remediation: str | None = Field(
+        default=None,
+        description="Actionable developer or security operations guidance.",
+    )
+    unprotected_simulation: dict[str, Any] | None = Field(
+        default=None,
+        description="Simulates how an unprotected model fails vs defended state.",
+    )
     timestamp: str = Field(
         default_factory=lambda: datetime.now(UTC).isoformat(),
     )

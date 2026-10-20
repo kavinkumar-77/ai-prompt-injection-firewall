@@ -138,8 +138,9 @@ def main():
     print("  PROJECT AEGIS IS ACTIVE & PROTECTING BROWSING SESSIONS")
     print("  - React Dashboard:   http://localhost:5173")
     print("  - Backend Swagger:   http://localhost:8000/docs")
-    print("  - Attack Simulator:  demo/attack-simulator.html")
-    print("  - Extension Folder:  extension/dist (Load unpacked in chrome://extensions)")
+    print("  - Live Attack Lab:   http://localhost:5173 (Authentic Attack Studio)")
+    print("  - Standalone SDK:    http://localhost:8000/aegis-shield.js (Zero-Extension)")
+    print("  - Optional Ext:      extension/dist (Optional Chrome MV3 Extension)")
     print("=" * 61)
     print("\n[ACTIVE] Services running. Press Ctrl+C to stop all services...")
 

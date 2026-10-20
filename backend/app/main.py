@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.database import (
@@ -87,6 +88,15 @@ SUSPICIOUS_INDICATORS = [
 def health_check() -> dict[str, str]:
     """Health check endpoint to verify backend operational readiness."""
     return {"status": "ok"}
+
+
+@app.get("/aegis-shield.js", tags=["System"])
+def get_aegis_shield_sdk() -> FileResponse:
+    """Serves the standalone drop-in web defense SDK for zero-extension in-app protection."""
+    sdk_path = os.path.join(demo_dir, "aegis-shield.js")
+    if os.path.exists(sdk_path):
+        return FileResponse(sdk_path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="SDK script not found")
 
 
 @app.post("/analyze-intent", response_model=IntentAnalysisResponse, tags=["Security"])
