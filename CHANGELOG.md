@@ -4,6 +4,24 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-20
+
+### Added
+- **The Attack Lab (`lab/`, `backend/app/api/v1/lab.py`)**:
+  - Sandboxed environment (`lab/sandbox/`) seeded with realistic honeytoken secrets (`credentials.env`, `customers.csv`, `internal_policy.md`).
+  - Audited sandbox tools (`lab/tools/sandbox_tools.py`): `read_file` (with directory jail protection), `send_email` (writing to simulated outbox log), `write_note`, and `http_get`, with execution auditing to `tool_audit.jsonl`.
+  - Autonomous tool-using agent (`lab/agent/core_agent.py`) communicating with any OpenAI-compatible gateway and checking tool execution against AEGIS policies.
+  - 12 comprehensive scenarios (`lab/scenarios/`): direct override, indirect email exfiltration, hidden CSS injection, HTML comment smuggling, markdown image leak, canary extraction, tool abuse path traversal, chat delimiter smuggling, multilingual injection, base64 payload execution, roleplay escalation, and benign customer support control.
+  - Scenario runner (`lab/runner.py`) and batch evaluator (`lab/batch_run.py`) evaluating automated, objective success oracles with side-by-side comparison (AEGIS OFF vs AEGIS ON).
+  - Attack Lab REST API endpoints: `GET /v1/lab/scenarios`, `GET /v1/lab/scenarios/{id}`, `POST /v1/lab/run`, `GET /v1/lab/report`.
+  - Batch evaluation report (`lab/reports/summary.json`, `lab/reports/summary.md`):
+    - Attack Success Rate without AEGIS: 100.0% (11/11 attacks succeeded).
+    - Attack Success Rate with AEGIS: 0.0% (0/11 attacks succeeded).
+    - False positive rate on benign controls: 0.0% (1/1 allowed).
+    - Measured Risk Reduction: -100.0%.
+- **Integration Tests**:
+  - Added 7 Attack Lab integration tests in `backend/tests/test_lab.py`, bringing test suite to 116 tests.
+
 ## [0.4.0] - 2026-10-20
 
 ### Added

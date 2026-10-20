@@ -44,6 +44,8 @@ extension/dist/
 logs/
 *.log
 *report*.txt
+lab/sandbox/tool_audit.jsonl
+lab/sandbox/notes/
 
 # Datasets & Processed Data
 data/processed/

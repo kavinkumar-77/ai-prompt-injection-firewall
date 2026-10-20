@@ -20,6 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.v1.events import router as events_router
 from app.api.v1.gateway import router as gateway_router
 from app.api.v1.health import router as health_router
+from app.api.v1.lab import router as lab_router
 from app.api.v1.metrics import router as metrics_router
 from app.api.v1.policies import router as policies_router
 from app.api.v1.scan import router as scan_router
@@ -99,6 +100,7 @@ app.include_router(events_router)
 app.include_router(metrics_router)
 app.include_router(policies_router)
 app.include_router(gateway_router)
+app.include_router(lab_router)
 
 # Mount demo folder for interactive presentation
 demo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "demo"))

@@ -1,8 +1,20 @@
 # Project Status: Project AEGIS
 
-## Honest Current State (Phase 4 Complete)
+## Honest Current State (Phase 5 Complete)
 
 ### What Works (Completed & Operational)
+* **The Attack Lab (`lab/`, `backend/app/api/v1/lab.py`)**:
+  - Sandboxed environment (`lab/sandbox/`) with honeytoken secrets (`credentials.env`, `customers.csv`, `internal_policy.md`).
+  - Audited tools (`lab/tools/sandbox_tools.py`): `read_file`, `send_email`, `write_note`, `http_get` with audit logging in `tool_audit.jsonl`.
+  - Autonomous tool-using agent (`lab/agent/core_agent.py`) executing realistic multi-turn scenarios.
+  - 12 comprehensive scenarios (`lab/scenarios/`) covering direct override, indirect email exfiltration, hidden CSS, HTML comment smuggling, markdown image leak, canary extraction, tool abuse path traversal, delimiter smuggling, multilingual, base64 payload, roleplay escalation, and benign control.
+  - Objective automated oracles evaluating attack success.
+  - Attack Lab REST API (`GET /v1/lab/scenarios`, `GET /v1/lab/scenarios/{id}`, `POST /v1/lab/run`, `GET /v1/lab/report`).
+  - Measured Batch Results (`lab/reports/summary.json`):
+    - ASR Without AEGIS: **100.0%** (11/11 attacks succeeded)
+    - ASR With AEGIS: **0.0%** (0/11 attacks succeeded)
+    - False Positive Rate on Controls: **0.0%** (0/1 false positives)
+    - Risk Reduction: **-100.0%**
 * **OpenAI-Compatible Proxy Gateway (`backend/app/api/v1/gateway.py`, `backend/app/gateway/`)**:
   - `POST /v1/chat/completions`: Full drop-in OpenAI-compatible proxy supporting both non-streaming and Server-Sent Events (SSE) streaming (`stream=true`).
   - `GET /v1/models`: OpenAI-compatible model catalog endpoint.
