@@ -47,8 +47,11 @@ class AegisPipeline:
         req_id = str(uuid.uuid4())
         layers: list[LayerResult] = []
 
+        # Cap input length to protect against CPU exhaustion
+        raw_text = request.text[:50_000] if request.text else ""
+
         # Layer 1: Normalizer / Deobfuscator
-        normalized_text, norm_result = self.normalizer.process(request.text)
+        normalized_text, norm_result = self.normalizer.process(raw_text)
         layers.append(norm_result)
 
         # Layer 2: Secrets and PII with redaction

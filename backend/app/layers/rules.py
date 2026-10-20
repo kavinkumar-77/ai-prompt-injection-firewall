@@ -68,7 +68,7 @@ RULES_CATALOG: Final[list[SecurityRule]] = [
             re.compile(r"<<SYS>>", re.IGNORECASE),
             re.compile(r"<</SYS>>", re.IGNORECASE),
             re.compile(r"<s>\[SYSTEM\]", re.IGNORECASE),
-            re.compile(r"(?is)\bHuman:\s*.*?\bAssistant:\s*"),
+            re.compile(r"(?i)(?:^|\n)[ \t]*Human:[ \t]*[^\r\n]{0,250}\n[ \t]*Assistant:[ \t]*"),
         ],
     ),
     SecurityRule(
@@ -82,15 +82,15 @@ RULES_CATALOG: Final[list[SecurityRule]] = [
         ),
         patterns=[
             re.compile(
-                r"!\[.*?\]\(https?://[^\s)]+?(?:cookie|token|auth|key|secret|leak|exfil|data|session)=.*?\)",
+                r"!\[[^\]\r\n]{0,250}\]\(https?://[^\s)]+?(?:cookie|token|auth|key|secret|leak|exfil|data|session)=[^\s)]*?\)",
                 re.IGNORECASE,
             ),
             re.compile(
-                r"!\[.*?\]\(https?://(?:evil|attacker|webhook|requestbin|pipedream|pastebin)[^\s)]*?\)",
+                r"!\[[^\]\r\n]{0,250}\]\(https?://(?:evil|attacker|webhook|requestbin|pipedream|pastebin)[^\s)]*?\)",
                 re.IGNORECASE,
             ),
             re.compile(
-                r"<img\s+[^>]*?src=['\"]https?://[^\s'\"]+?(?:leak|steal|token|cookie)=.*?['\"][^>]*?>",
+                r"<img\s+[^>]{0,300}?src=['\"]https?://[^\s'\"]+?(?:leak|steal|token|cookie)=[^\s'\"]*?['\"][^>]{0,100}?>",
                 re.IGNORECASE,
             ),
         ],

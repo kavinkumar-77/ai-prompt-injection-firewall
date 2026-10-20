@@ -189,7 +189,9 @@ SECRET_PATTERNS: list[SecretRule] = [
     # 3. Communications PII
     SecretRule(
         name="email_address",
-        pattern=re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+        pattern=re.compile(
+            r"\b[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9-]{1,63}\.){1,8}[A-Za-z]{2,24}\b"
+        ),
         category="PII",
         risk_score=0.75,
         placeholder="[PII:email_address]",

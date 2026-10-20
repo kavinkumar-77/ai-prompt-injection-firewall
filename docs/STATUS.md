@@ -1,8 +1,32 @@
 # Project Status: Project AEGIS
 
-## Honest Current State (Phase 7 Complete)
+## Honest Current State (Phase 8 Complete)
 
 ### What Works (Completed & Operational)
+* **Production Deployment & Hardening (`Dockerfile`, `dashboard/Dockerfile`, `docker-compose.yml`, `docs/deployment.md`)**:
+  - Multi-stage, unprivileged runner Dockerfiles for Gateway backend (`python:3.11-slim-bookworm`) and Operator Console (`node:20-alpine` + `nginx:1.27-alpine-slim`) with built-in container healthchecks.
+  - Hardened Nginx configuration (`dashboard/nginx.conf`) with static asset caching, reverse proxying for `/v1/` and `/health`, and security headers.
+  - Multi-service `docker-compose.yml` supporting core services (`gateway`, `dashboard`) and optional companion profiles (`ollama`, `postgres`, `monitoring` with Prometheus and Grafana).
+  - Provisioned Grafana dashboard (`deploy/monitoring/grafana/dashboards/aegis-overview.json`) and Prometheus scraper configuration (`deploy/monitoring/prometheus.yml`).
+  - Comprehensive operational deployment guide (`docs/deployment.md`) documenting Docker setups, bare-metal operations, SQLite/PostgreSQL retention lifecycle, salt rotation protocols, and empirical load benchmarks.
+* **Local Development Supervisor (`scripts/dev_up.py`, `start_aegis.py`)**:
+  - Automated preflight validation: Python $\ge 3.11$, Node.js $\ge 18$, port availability (`8000`, `5173`), ML model asset SHA-256 verification, and upstream Ollama reachability probe.
+  - Multi-process supervisor with clean signal handling (`SIGINT` / `Ctrl+C`).
+  - Backwards-compatible `start_aegis.py` wrapper.
+* **Defense-in-Depth Security Hardening**:
+  - `SecurityHeadersMiddleware`: Injects CSP, HSTS, X-Frame-Options, X-Content-Type-Options nosniff, and Referrer-Policy headers.
+  - `RequestSizeLimitMiddleware`: Enforces 5 MB payload limit (HTTP 413) to protect against memory exhaustion.
+  - Configurable CORS filtering via `AEGIS_CORS_ORIGINS`.
+  - Input length ceiling (`50,000` chars) and sliding-window chunk limit (`max_chunks = 12`) in ML Classifier and Pipeline to prevent CPU denial of service.
+  - ReDoS vulnerability mitigations across chat template delimiters (`R-DELIM-001`), image exfiltration (`R-EXFIL-001`), RFC 5321 email address PII regex, and CSS hidden elements.
+  - Pathological input and ReDoS fuzzing test suite in `backend/tests/test_redos.py` (4 tests, all passing with bounded runtime).
+* **Concurrency & Load Testing Benchmark (`scripts/load_test.py`)**:
+  - Self-contained async HTTP load test harness measuring throughput (RPS) and latency percentiles (P50, P90, P95, P99).
+  - Empirical load test documentation recording performance on development hardware (up to 762 RPS with P95 under 4.1 ms across all 6 defense layers).
+* **CI/CD & Automation (`.github/workflows/release.yml`, `.github/dependabot.yml`, `Makefile`)**:
+  - Release workflow building Python SDK wheels, Docker images, and publishing release assets with SHA-256 checksums on git tags.
+  - Dependabot configuration for pip, npm, and GitHub Actions dependencies.
+  - Extended root `Makefile` with `docker-build`, `docker-up`, `docker-down`, `audit`, and `bench` targets.
 * **AEGIS Red-Team Evaluation Harness (`redteam/`)**:
   - Standalone CLI tool (`aegis-redteam`) evaluating 205 test cases (160 attacks across OWASP LLM01/02/06 and 45 benign control hard negatives).
   - 6 dedicated corpus test suites: `direct_injections.yaml`, `indirect_injections.yaml`, `delimiter_smuggling.yaml`, `credential_exfil.yaml`, `jailbreaks.yaml`, `benign_controls.yaml`.
@@ -124,12 +148,12 @@
   - Legacy TF-IDF proto-matcher moved to `backend/app/layers/legacy_tfidf.py` (marked deprecated as v1 baseline).
   - Attention probe honestly renamed to `lexical_divergence` (syntactic keyword overlap).
 * **Quality Gates & Tooling**:
-  - 100% passing hermetic backend tests (122/122) in `backend/tests/`.
+  - 100% passing hermetic backend tests (126/126) in `backend/tests/`.
   - 100% passing Chrome extension tests (37/37) in `extension/tests/`.
   - Clean production build of React 18 dashboard (`tsc && vite build`).
   - Strict linting and formatting with `ruff check .` (0 errors) and `ruff format .`.
-  - Type-checking with `mypy backend aegis_client` (0 errors in 65 files).
-  - Root `Makefile` with targets (`setup`, `lint`, `format`, `test`, `eval`, `up`, `demo`).
+  - Type-checking with `mypy backend aegis_client` (0 errors in 66 files).
+  - Root `Makefile` with targets (`setup`, `lint`, `format`, `test`, `eval`, `redteam`, `up`, `down`, `demo`, `docker-build`, `docker-up`, `docker-down`, `audit`, `bench`).
   - Pre-commit with `detect-secrets`.
   - GitHub Actions CI matrix for Python 3.11/3.12, Node 20, Ruff, Mypy, Pytest with coverage, Extension tests, and Dashboard build.
 
@@ -141,12 +165,14 @@
 ---
 
 ### What is Missing
-* **Phase 8**: Deployment & Hardening (Dockerfiles, docker-compose.yml, dev_up.py, security hardening & ReDoS test).
 * **Phase 9**: Documentation, Demo Script & Final Polish (README rewrite, threat model, API docs, evaluation docs, demo script).
 
 ---
 
 ### What is Measured
+* **Load & Concurrency Benchmark (`docs/deployment.md`, `scripts/load_test.py`)**:
+  - Single-client P50 Latency: **1.12 ms**, Throughput: **78.4 RPS**.
+  - Concurrency C=20 Throughput: **762.3 RPS**, P95 Latency: **4.10 ms**, Error Rate: **0.0%**.
 * **Red-Team Evaluation Harness (`redteam/reports/report.json`)**:
   - Attacks Evaluated: 160 across OWASP LLM01, LLM02, LLM06.
   - Attack Detection Rate: **83.12%** (133 / 160 detected).
@@ -170,7 +196,7 @@
 * **Quality Gates**:
   - `ruff check .`: 0 errors.
   - `ruff format --check .`: Clean across all python files.
-  - `mypy backend aegis_client`: 0 errors in 65 source files.
-  - `pytest backend/tests`: 122/122 passed cleanly.
+  - `mypy backend aegis_client`: 0 errors in 66 source files.
+  - `pytest backend/tests`: 126/126 passed cleanly.
   - `extension` (`npm test`): 37/37 passed.
   - `dashboard` (`npm run build`): Clean production bundle.

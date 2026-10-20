@@ -63,6 +63,50 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
             request_id_ctx.reset(token)
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Enforces defense-in-depth HTTP security headers."""
+
+    async def dispatch(self, request: Request, call_next):
+        response: Response = await call_next(request)
+        if settings.enable_security_headers:
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "connect-src 'self' http: https: ws: wss:;"
+            )
+        return response
+
+
+class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
+    """Enforces request payload size limits to protect against memory exhaustion."""
+
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                length = int(content_length)
+                if length > settings.max_request_size_bytes:
+                    err_msg = (
+                        '{"detail":"Request payload exceeds maximum allowed size",'
+                        '"error":"payload_too_large"}'
+                    )
+                    return Response(
+                        content=err_msg,
+                        status_code=413,
+                        media_type="application/json",
+                    )
+            except ValueError:
+                pass
+        return await call_next(request)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager to initialize resources."""
@@ -82,14 +126,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Request ID correlation middleware
+# Core middlewares
 app.add_middleware(RequestIdMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
 
 # Enable CORS for dashboard, browser extension, and test harness
+cors_origins = settings.cors_origins if settings.app_env != "development" else ["*"]
+allow_creds = False if "*" in cors_origins else True
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=allow_creds,
     allow_methods=["*"],
     allow_headers=["*"],
 )

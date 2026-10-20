@@ -32,6 +32,18 @@ class Settings(BaseSettings):
     store_raw_snippets: bool = False
     fail_open: bool = False
 
+    # Security Hardening
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+    enable_security_headers: bool = True
+    max_request_size_bytes: int = 5 * 1024 * 1024  # 5 MB
+    max_input_length_chars: int = 50_000  # Cap before ML and sliding window processing
+
     model_config = SettingsConfigDict(
         env_prefix="AEGIS_",
         env_file=".env",

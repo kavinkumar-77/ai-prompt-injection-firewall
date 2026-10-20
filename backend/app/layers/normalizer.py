@@ -39,11 +39,11 @@ HTML_COMMENT_PATTERN = re.compile(r"<!--(.*?)-->", re.DOTALL)
 
 # CSS hidden text patterns (display:none, visibility:hidden, opacity:0, font-size:0, white text)
 CSS_HIDDEN_PATTERN = re.compile(
-    r"<(?:span|div|p|section|article)\s+[^>]*?style=[\"'][^\"']*"
+    r"<(?:span|div|p|section|article)\s+[^>]{0,300}?style=[\"'][^\"']{0,200}?"
     r"(?:display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0|font-size\s*:\s*0"
     r"|color\s*:\s*(?:#fff(?:fff)?|white|rgba?\(\s*255\s*,\s*255\s*,\s*255))"
-    r"[^\"']*[\"'][^>]*>(.*?)</(?:span|div|p|section|article)>",
-    re.IGNORECASE | re.DOTALL,
+    r"[^\"']{0,200}?[\"'][^>]{0,100}?>([\s\S]{0,2000}?)</(?:span|div|p|section|article)>",
+    re.IGNORECASE,
 )
 
 # Homoglyph translation mapping (Cyrillic, Greek, lookalikes commonly used in evasion)
@@ -122,14 +122,13 @@ class NormalizerLayer:
         zw_matches = list(ZERO_WIDTH_PATTERN.finditer(normalized))
         if zw_matches:
             obfuscation_detected = True
-            for m in zw_matches:
-                evidence_list.append(
-                    Evidence(
-                        kind="zero_width_steganography",
-                        span=(m.start(), m.end()),
-                        detail=f"Detected invisible zero-width char (code U+{ord(m.group()):04X})",
-                    )
+            evidence_list.append(
+                Evidence(
+                    kind="zero_width_steganography",
+                    span=(zw_matches[0].start(), zw_matches[-1].end()),
+                    detail=f"Detected and stripped {len(zw_matches)} zero-width characters",
                 )
+            )
             normalized = ZERO_WIDTH_PATTERN.sub("", normalized)
 
         # 3. Unicode Tag characters (U+E0000 - U+E007F) conversion
@@ -184,13 +183,13 @@ class NormalizerLayer:
             )
 
         # 5. Hidden HTML Comments Extraction
-        comment_matches = list(HTML_COMMENT_PATTERN.finditer(normalized))
+        comment_matches = list(HTML_COMMENT_PATTERN.finditer(normalized))[:25]
         extracted_hidden_text: list[str] = []
         for m in comment_matches:
             content = m.group(1).strip()
             if content and any(c.isalnum() for c in content):
                 obfuscation_detected = True
-                extracted_hidden_text.append(content)
+                extracted_hidden_text.append(content[:1000])
                 evidence_list.append(
                     Evidence(
                         kind="hidden_html_comment",
@@ -200,12 +199,12 @@ class NormalizerLayer:
                 )
 
         # 6. Hidden CSS Elements Extraction (display:none / white text)
-        css_hidden_matches = list(CSS_HIDDEN_PATTERN.finditer(normalized))
+        css_hidden_matches = list(CSS_HIDDEN_PATTERN.finditer(normalized))[:25]
         for m in css_hidden_matches:
             inner_text = m.group(1).strip()
             if inner_text:
                 obfuscation_detected = True
-                extracted_hidden_text.append(inner_text)
+                extracted_hidden_text.append(inner_text[:1000])
                 evidence_list.append(
                     Evidence(
                         kind="hidden_css_element",
@@ -216,7 +215,7 @@ class NormalizerLayer:
 
         if extracted_hidden_text:
             # Append hidden text with a clear delimiter so downstream layers analyze it
-            normalized += "\n\n" + "\n".join(extracted_hidden_text)
+            normalized += "\n\n" + "\n".join(extracted_hidden_text[:25])
 
         # 7. URL percent-decoding check
         url_matches = list(URL_ENCODED_PATTERN.finditer(normalized))

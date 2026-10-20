@@ -4,6 +4,34 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-20
+
+### Added
+- **Production Containerization & Orchestration (`Dockerfile`, `dashboard/Dockerfile`, `docker-compose.yml`)**:
+  - Multi-stage, unprivileged runner Dockerfiles for Gateway backend (`python:3.11-slim-bookworm`) and Operator Console (`node:20-alpine` + `nginx:1.27-alpine-slim`).
+  - Production Nginx configuration (`dashboard/nginx.conf`) with static caching, reverse proxying for `/v1/` and `/health`, and security headers.
+  - Multi-service `docker-compose.yml` supporting core services (`gateway`, `dashboard`) and optional profiles (`ollama`, `postgres`, `monitoring` with Prometheus and Grafana).
+  - Provisioned Grafana dashboard (`deploy/monitoring/grafana/dashboards/aegis-overview.json`) and Prometheus scrape configuration (`deploy/monitoring/prometheus.yml`).
+- **Local Development Supervisor (`scripts/dev_up.py`, `start_aegis.py`)**:
+  - Preflight validation: Python $\ge 3.11$, Node.js $\ge 18$, port availability (`8000`, `5173`), ML model asset SHA-256 verification, and upstream Ollama reachability probe.
+  - Subprocess supervisor with clean signal handling (`SIGINT` / `Ctrl+C`).
+  - Backwards-compatible `start_aegis.py` entrypoint.
+- **Security Hardening**:
+  - `SecurityHeadersMiddleware`: Injects CSP, HSTS, X-Frame-Options, X-Content-Type-Options nosniff, and Referrer-Policy headers.
+  - `RequestSizeLimitMiddleware`: Enforces 5 MB payload limit (HTTP 413) to protect against memory exhaustion.
+  - Configurable CORS filtering via `AEGIS_CORS_ORIGINS`.
+  - Input length ceiling (`50,000` chars) and sliding-window chunk limit (`max_chunks = 12`) in ML Classifier and Pipeline.
+  - ReDoS vulnerability mitigations across chat template delimiters (`R-DELIM-001`), image exfiltration (`R-EXFIL-001`), email address PII regex, and CSS hidden elements.
+  - Pathological input and ReDoS fuzzing test suite in `backend/tests/test_redos.py` (4 tests, all passing with bounded runtime).
+- **Concurrency & Load Testing Benchmark (`scripts/load_test.py`, `docs/deployment.md`)**:
+  - Self-contained async HTTP load test harness measuring throughput (RPS) and latency percentiles (P50, P90, P95, P99).
+  - Empirical load test documentation recording performance on development hardware (up to 762 RPS with P95 under 4.1 ms).
+  - Comprehensive operational deployment guide (`docs/deployment.md`) detailing Docker procedures, environment configuration reference table, backup and retention policies, and salt rotation protocols.
+- **CI/CD & Automation (`.github/workflows/release.yml`, `.github/dependabot.yml`, `Makefile`)**:
+  - Release workflow building Python SDK wheels, Docker images, and publishing release assets with SHA-256 checksums on git tags.
+  - Dependabot configuration for pip, npm, and GitHub Actions dependencies.
+  - Extended root `Makefile` with `docker-build`, `docker-up`, `docker-down`, `audit`, and `bench` targets.
+
 ## [0.7.0] - 2026-10-20
 
 ### Added

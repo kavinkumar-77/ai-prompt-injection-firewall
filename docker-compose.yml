@@ -1,0 +1,103 @@
+version: "3.8"
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aegis-gateway:latest
+    container_name: aegis-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - AEGIS_HOST=0.0.0.0
+      - AEGIS_PORT=8000
+      - AEGIS_APP_ENV=production
+      - AEGIS_DB_PATH=/app/data/threats.db
+      - AEGIS_SECRET_SALT=aegis_production_secure_salt_value
+      - AEGIS_UPSTREAM_LLM_URL=http://ollama:11434/v1
+    volumes:
+      - aegis_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    image: aegis-dashboard:latest
+    container_name: aegis-dashboard
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  # Optional local LLM upstream provider
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aegis-ollama
+    restart: unless-stopped
+    profiles:
+      - ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+  # Optional PostgreSQL persistence backend
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegis-postgres
+    restart: unless-stopped
+    profiles:
+      - postgres
+    environment:
+      POSTGRES_DB: aegis
+      POSTGRES_USER: aegis_user
+      POSTGRES_PASSWORD: aegis_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Optional Prometheus metric scraper
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aegis-prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  # Optional Grafana monitoring console
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aegis-grafana
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+
+volumes:
+  aegis_data:
+  ollama_models:
+  postgres_data:

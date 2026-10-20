@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-release:
+    name: Build Packages & GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install Build Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel
+
+      - name: Build aegis-client Python SDK
+        run: |
+          cd aegis_client
+          python -m build
+          cd ..
+
+      - name: Build Gateway Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: aegis-gateway:${{ github.ref_name }}
+
+      - name: Build Dashboard Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: dashboard/Dockerfile
+          push: false
+          tags: aegis-dashboard:${{ github.ref_name }}
+
+      - name: Compute Release Asset SHA-256 Checksums
+        run: |
+          mkdir -p release_artifacts
+          cp aegis_client/dist/* release_artifacts/
+          if [ -f ml/reports/metrics.json ]; then
+            cp ml/reports/metrics.json release_artifacts/
+          fi
+          if [ -f models/classifier.onnx ]; then
+            cp models/classifier.onnx release_artifacts/
+          fi
+          cd release_artifacts
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release_artifacts/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false

@@ -83,25 +83,33 @@ class ClassifierLayer:
             )
 
         # Sliding window for long inputs (window: 500 chars, stride: 250 chars)
+        # Cap input length and max evaluation chunks to protect against CPU denial of service
+        max_length = 50_000
+        safe_text = text[:max_length]
         window_size = 500
         stride = 250
         max_score = 0.0
         peak_span: tuple[int, int] | None = None
         evidence: list[Evidence] = []
+        max_chunks = 12
+        chunk_count = 0
 
-        if len(text) <= window_size:
-            score = self._score_text(text)
+        if len(safe_text) <= window_size:
+            score = self._score_text(safe_text)
             max_score = score
-            peak_span = (0, len(text))
+            peak_span = (0, len(safe_text))
         else:
-            for start in range(0, len(text), stride):
-                end = min(len(text), start + window_size)
-                window_text = text[start:end]
+            for start in range(0, len(safe_text), stride):
+                if chunk_count >= max_chunks:
+                    break
+                chunk_count += 1
+                end = min(len(safe_text), start + window_size)
+                window_text = safe_text[start:end]
                 score = self._score_text(window_text)
                 if score > max_score:
                     max_score = score
                     peak_span = (start, end)
-                if end == len(text):
+                if end == len(safe_text):
                     break
 
         max_score = round(max_score, 4)
