@@ -30,7 +30,7 @@ test:
 	pytest backend/tests
 
 eval:
-	$(PYTHON) -m pytest backend/tests/test_rules.py
+	$(PYTHON) ml/evaluate.py
 
 up:
 	uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload

@@ -1,0 +1,15 @@
+{
+  "manifest_version": "1.0.0",
+  "models": [
+    {
+      "name": "aegis-linear-v1",
+      "filename": "classifier.onnx",
+      "path": "models/classifier.onnx",
+      "sha256": "d791e94c10958619bc21d6598b69765eb5ec4ba8934d8638101309cbbe993485",
+      "size_bytes": 1005699,
+      "framework": "onnxruntime",
+      "target_opset": 15,
+      "created_at": "2026-10-20T13:44:29Z"
+    }
+  ]
+}

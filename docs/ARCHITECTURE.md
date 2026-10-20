@@ -83,22 +83,25 @@ Enforces the **First-Class Trust Level Concept**:
 
 ```python
 class Evidence(BaseModel):
-    kind: str                         # e.g., "rule_match_R-DELIM-001", "base64_payload"
-    span: tuple[int, int] | None      # (start_char, end_char) within analyzed text
-    detail: str                       # Human-readable explanation
+    kind: str  # e.g., "rule_match_R-DELIM-001", "base64_payload"
+    span: tuple[int, int] | None  # (start_char, end_char) within analyzed text
+    detail: str  # Human-readable explanation
+
 
 class LayerResult(BaseModel):
-    layer: str                        # Layer name
-    score: float                      # Normalized risk [0.0, 1.0]
-    label: str                        # Diagnostic label
-    evidence: list[Evidence]          # Flagged evidence fragments
-    latency_ms: float                 # Layer execution duration
+    layer: str  # Layer name
+    score: float  # Normalized risk [0.0, 1.0]
+    label: str  # Diagnostic label
+    evidence: list[Evidence]  # Flagged evidence fragments
+    latency_ms: float  # Layer execution duration
+
 
 class ScanRequest(BaseModel):
-    text: str                         # Untrusted input
+    text: str  # Untrusted input
     source: Literal["system", "user", "retrieved", "tool_output"]
     system_prompt: str | None = None
     metadata: dict[str, Any] = {}
+
 
 class ScanResponse(BaseModel):
     verdict: Literal["allow", "warn", "block", "redact"]

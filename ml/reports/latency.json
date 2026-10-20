@@ -1,0 +1,73 @@
+{
+  "benchmark_timestamp": "2026-10-20T13:48:19Z",
+  "hardware": {
+    "os": "Windows",
+    "os_release": "11",
+    "architecture": "AMD64",
+    "processor": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+    "python_version": "3.14.4",
+    "framework": "onnxruntime 1.31.0"
+  },
+  "grid": {
+    "len_50": {
+      "concurrency_1": {
+        "p50_ms": 0.359,
+        "p95_ms": 0.607,
+        "p99_ms": 0.979,
+        "mean_ms": 0.376
+      },
+      "concurrency_8": {
+        "p50_ms": 0.488,
+        "p95_ms": 1.064,
+        "p99_ms": 4.213,
+        "mean_ms": 0.632
+      },
+      "concurrency_32": {
+        "p50_ms": 0.775,
+        "p95_ms": 2.428,
+        "p99_ms": 3.412,
+        "mean_ms": 1.004
+      }
+    },
+    "len_500": {
+      "concurrency_1": {
+        "p50_ms": 0.293,
+        "p95_ms": 0.632,
+        "p99_ms": 0.981,
+        "mean_ms": 0.348
+      },
+      "concurrency_8": {
+        "p50_ms": 0.444,
+        "p95_ms": 1.354,
+        "p99_ms": 4.691,
+        "mean_ms": 0.647
+      },
+      "concurrency_32": {
+        "p50_ms": 0.543,
+        "p95_ms": 1.218,
+        "p99_ms": 1.824,
+        "mean_ms": 0.657
+      }
+    },
+    "len_2000": {
+      "concurrency_1": {
+        "p50_ms": 0.443,
+        "p95_ms": 0.942,
+        "p99_ms": 3.169,
+        "mean_ms": 0.556
+      },
+      "concurrency_8": {
+        "p50_ms": 0.64,
+        "p95_ms": 1.351,
+        "p99_ms": 3.956,
+        "mean_ms": 0.846
+      },
+      "concurrency_32": {
+        "p50_ms": 0.778,
+        "p95_ms": 2.111,
+        "p99_ms": 2.909,
+        "mean_ms": 0.926
+      }
+    }
+  }
+}

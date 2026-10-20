@@ -1,8 +1,14 @@
 # Project Status: Project AEGIS
 
-## Honest Current State (Phase 1 Complete)
+## Honest Current State (Phase 2 Complete)
 
 ### What Works (Completed & Operational)
+* **Real Trained ML Detector & ONNX Runtime Pipeline (`ml/`, `backend/app/layers/classifier.py`)**:
+  - Sublinear TF-IDF + Calibrated Logistic Regression trained on 5,380 samples, validated on 750 samples (Val F1: 0.9899, AUC: 0.9999).
+  - Exported to ONNX (`models/classifier.onnx`, 982 KB) with verified numerical parity (< 2e-3 difference against float64).
+  - Tracked in `models/MANIFEST.json` with SHA-256 integrity hash (`d791e94c10958619bc21d6598b69765eb5ec4ba8934d8638101309cbbe993485`).
+  - Single-threaded CPU inference with sliding window chunking (window 500, stride 250) and max-pool aggregation.
+  - Test set performance: Precision 1.0000, 0 false positives out of 2,550 negatives, Hard-Negative FPR: 0.0000%.
 * **Modular Pipeline Architecture (`backend/app/core/`)**:
   - `AegisPipeline`: Sequential multi-layer execution pipeline (`normalizer` -> `rules` -> `classifier` -> `context` -> `decision`).
   - Structured `LayerResult` with normalized risk scores, labels, and character `Evidence` spans for forensic UI rendering.
@@ -31,12 +37,19 @@
 * **Observability & Logging (`backend/app/observability/`)**:
   - Structured JSON logging to stdout with `ContextVar` request ID correlation (`X-Request-ID` propagation).
   - Salted SHA-256 payload masking ensuring zero sensitive data exposure in logs.
+* **Evaluation & Reproducibility Suite (`ml/`)**:
+  - `ml/train.py`: Deterministic model training pipeline.
+  - `ml/export_onnx.py`: ONNX export and parity validator.
+  - `ml/evaluate.py`: Test set evaluation generating `ml/reports/metrics.json`, confusion matrix, and PR curve.
+  - `ml/ablate.py`: Multi-configuration ablation study (`ml/reports/ablation.json`).
+  - `ml/benchmark_latency.py`: CPU concurrency latency matrix (`ml/reports/latency.json`).
+  - `scripts/fetch_assets.py`: Resilient asset downloader with backoff retries and SHA-256 validation.
 * **Backward Compatibility**:
   - All legacy endpoints (`/analyze-intent`, `/check-exfiltration`, `/check-canary`, `/check-visual-similarity`, `/threat-intel`, `/aegis-shield.js`, `/demo`) retained and operational.
   - Legacy TF-IDF proto-matcher moved to `backend/app/layers/legacy_tfidf.py` (marked deprecated as v1 baseline).
   - Attention probe honestly renamed to `lexical_divergence` (syntactic keyword overlap).
 * **Quality Gates & Tooling**:
-  - 100% passing hermetic backend tests (73/73) in `backend/tests/`.
+  - 100% passing hermetic backend tests (77/77) in `backend/tests/`.
   - 100% passing Chrome extension tests (37/37) in `extension/tests/`.
   - Clean production build of React 18 dashboard (`tsc && vite build`).
   - Strict linting and formatting with `ruff check .` (0 errors) and `ruff format .`.
@@ -48,13 +61,11 @@
 ---
 
 ### What is a Placeholder (`placeholder_*`)
-* `placeholder_onnx_transformer_model`: The real trained transformer classifier (`microsoft/deberta-v3-small` or `all-MiniLM-L6-v2`) will be trained and exported to quantized ONNX int8 format in Phase 2. `ClassifierLayer` currently evaluates the TF-IDF prototype baseline.
 * `placeholder_qwen_gguf_weights`: Optional heavy LLM checkpoint for local offline inference.
 
 ---
 
 ### What is Missing
-* **Phase 2**: Dataset build, training pipeline, ONNX export, and evaluation metrics (`ml/reports/metrics.json`).
 * **Phase 3**: Capability policy YAML schema and fine-grained context trust calibration.
 * **Phase 4**: OpenAI-compatible `/v1/chat/completions` proxy gateway.
 * **Phase 5**: Real Attack Lab with sandboxed local agent and live attack scenarios (firewall OFF vs ON).
@@ -63,14 +74,19 @@
 ---
 
 ### What is Measured
-* **Detection Latency**:
-  - Deterministic rules layer: < 0.1 ms.
-  - Normalizer layer: < 0.2 ms.
-  - Pipeline composite latency: < 5.0 ms.
+* **Detector Accuracy (`ml/reports/metrics.json`)**:
+  - Overall Test Precision: 1.0000 (0 false positives on 2,550 test negatives).
+  - Hard-Negative FPR: 0.0000% (0 / 600 false positives on benign security/coding prompts).
+  - Overall Test Recall: 0.4652 (honest holdout evaluation on unseen HackAPrompt red-team challenges).
+  - Test ROC-AUC: 0.9469, PR-AUC: 0.9125.
+* **Inference Latency (`ml/reports/latency.json`)**:
+  - CPU Single-Thread p50: 0.29 - 0.44 ms.
+  - CPU Single-Thread p95: 0.61 - 0.94 ms.
+  - CPU 32-Thread Concurrency p95: < 2.5 ms.
 * **Quality Gates**:
   - `ruff check .`: 0 errors.
   - `ruff format --check .`: Clean.
   - `mypy backend`: 0 errors in 36 source files.
-  - `pytest backend/tests`: 73/73 passed cleanly.
+  - `pytest backend/tests`: 77/77 passed cleanly.
   - `extension` (`npm test`): 37/37 passed.
-  - `dashboard` (`npm run build`): Clean production bundle in ~14s.
+  - `dashboard` (`npm run build`): Clean production bundle.
