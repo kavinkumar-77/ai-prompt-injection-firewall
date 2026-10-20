@@ -10,6 +10,9 @@ dependencies = []
 testpaths = ["backend/tests", "ml/tests"]
 pythonpath = ["backend", "."]
 addopts = "-v --strict-markers"
+markers = [
+    "model: marks tests that evaluate real ONNX model weights",
+]
 
 [tool.ruff]
 target-version = "py311"

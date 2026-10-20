@@ -210,10 +210,12 @@
   - CPU Single-Thread p50: 0.29 - 0.44 ms.
   - CPU Single-Thread p95: 0.61 - 0.94 ms.
   - CPU 32-Thread Concurrency p95: &lt; 2.5 ms.
-* **Quality Gates**:
+* **Quality Gates & CI/CD Integrity**:
   - `ruff check .`: 0 errors.
   - `ruff format --check .`: Clean across all python files.
   - `mypy backend aegis_client`: 0 errors in 66 source files.
-  - `pytest backend/tests`: 126/126 passed cleanly.
+  - `pytest backend/tests`: 126/126 passed cleanly (including hermetic fallback mode and production ONNX mode).
+  - GitHub Actions CI: Hermetic testing verified for offline/unbundled environments.
+  - Pull Requests: All obsolete/conflicting PRs (#21, #22) and unpinned automated Dependabot bumps (#23–#49) reconciled and closed.
   - `extension` (`npm test`): 37/37 passed.
   - `dashboard` (`npm run build`): Clean production bundle.

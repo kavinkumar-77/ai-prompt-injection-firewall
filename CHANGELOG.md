@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-10-20
 
+### Fixed
+- **Hermetic CI & Test Parity**: Updated `test_classifier_sliding_window` and `test_redteam_in_process_execution` to gracefully verify fallback and degraded pipeline paths in CI environments where large ONNX binary weights are uncommitted (Rule 3/7 compliance). Registered `model` marker in `pyproject.toml`.
+- **Dependabot & PR Hygiene**: Tuned `.github/dependabot.yml` with monthly schedules, PR limits, and semver-major ignores for breaking ecosystem packages. Closed obsolete pull requests (#21, #22) whose contributions were merged into `main` and dismissed unpinned Dependabot PRs (#23–#49).
+
 ### Added
 - **Production Documentation & Technical Architecture Suite (`docs/`, `README.md`)**:
   - Completely rewritten `README.md` featuring problem statement, Mermaid architecture diagram, 30-second quickstart, empirical benchmark tables, and code snippets.
