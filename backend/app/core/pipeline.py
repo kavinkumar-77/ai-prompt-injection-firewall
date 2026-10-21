@@ -71,24 +71,33 @@ class AegisPipeline:
         layers.append(ctx_result)
 
         # Layer 6: Decision Engine
+        eval_policy = (
+            request.policy_preset
+            or (request.metadata.get("policy_preset") if request.metadata else None)
+            or self.decision_engine.policy_id
+        )
         verdict, risk_score, rationale, explanations = self.decision_engine.evaluate(
             request=request,
             layer_results=layers,
             sanitized_text=redacted_text if redacted_text != request.text else None,
+            policy_override=eval_policy,
         )
 
         total_latency = (time.perf_counter() - start_time) * 1000
 
+        redacted_out = redacted_text if verdict == "redact" else None
         return ScanResponse(
             verdict=verdict,
             risk_score=risk_score,
             layers=layers,
             explanations=explanations,
             rationale=rationale,
+            explanation=rationale or (explanations[0] if explanations else "Inspection completed."),
             request_id=req_id,
-            policy_id=self.decision_engine.policy_id,
+            policy_id=eval_policy,
             latency_ms=round(total_latency, 3),
-            sanitized_text=redacted_text if verdict == "redact" else None,
+            sanitized_text=redacted_out,
+            transformed_text=redacted_out,
         )
 
     def scan_tool_call(self, request: ToolCallScanRequest) -> ScanResponse:
@@ -133,9 +142,12 @@ class AegisPipeline:
             layers=layers,
             explanations=explanations,
             rationale=rationale,
+            explanation=rationale or (explanations[0] if explanations else "Inspection completed."),
             request_id=req_id,
             policy_id=self.decision_engine.policy_id,
             latency_ms=round(total_latency, 3),
+            sanitized_text=None,
+            transformed_text=None,
         )
 
 

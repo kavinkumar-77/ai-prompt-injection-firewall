@@ -113,14 +113,14 @@ export const EventsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-white flex items-center space-x-2">
-              <Database className="w-5 h-5 text-blue-400" />
+              <Database className="w-5 h-5 text-indigo-400" />
               <span>Security Event Audit Trail</span>
             </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Privacy-preserving event log. Raw prompts are masked with cryptographic SHA-256 digests.
             </p>
           </div>
@@ -129,7 +129,7 @@ export const EventsPage: React.FC = () => {
             <button
               onClick={handleExportCSV}
               disabled={events.length === 0}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center space-x-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 flex items-center space-x-1.5 transition-all"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
@@ -137,7 +137,7 @@ export const EventsPage: React.FC = () => {
             <button
               onClick={handleExportJSON}
               disabled={events.length === 0}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center space-x-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 flex items-center space-x-1.5 transition-all"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export JSON</span>
@@ -145,7 +145,7 @@ export const EventsPage: React.FC = () => {
             <button
               onClick={handleClear}
               disabled={events.length === 0}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 flex items-center space-x-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center space-x-1.5 transition-all"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Clear</span>
@@ -154,15 +154,15 @@ export const EventsPage: React.FC = () => {
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-white/[0.06] text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-800 text-xs">
           <div className="sm:col-span-2 relative">
-            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by event ID, SHA-256 hash, attack type, or reasoning..."
-              className="w-full bg-[#0E131F] border border-white/[0.1] rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono placeholder-zinc-600"
+              className="w-full bg-[#090D18] border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono placeholder-slate-600"
             />
           </div>
 
@@ -170,7 +170,7 @@ export const EventsPage: React.FC = () => {
             <select
               value={verdictFilter}
               onChange={(e) => setVerdictFilter(e.target.value)}
-              className="w-full bg-[#0E131F] border border-white/[0.1] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+              className="w-full bg-[#090D18] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
             >
               <option value="all">All Verdicts</option>
               <option value="block">Blocked Only</option>
@@ -190,7 +190,7 @@ export const EventsPage: React.FC = () => {
       )}
 
       {/* Events Table */}
-      <div className="bg-[#121826] border border-white/[0.08] rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="py-12 text-center text-xs text-zinc-400 font-mono flex items-center justify-center space-x-2">
             <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
@@ -317,7 +317,7 @@ export const EventsPage: React.FC = () => {
       {/* Event Detail Slide-over / Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#121826] border border-white/[0.1] rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
+          <div className="bg-[#0D1424] border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
               <div className="flex items-center space-x-2">
                 <ShieldAlert className="w-5 h-5 text-blue-400" />

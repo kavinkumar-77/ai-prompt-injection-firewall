@@ -62,10 +62,25 @@ class DecisionEngine:
         request: ScanRequest,
         layer_results: list[LayerResult],
         sanitized_text: str | None = None,
+        policy_override: str | None = None,
     ) -> tuple[ScanVerdict, float, str, list[str]]:
         """Calculates final verdict, consolidated risk score, primary reason, and explanations."""
         if not layer_results:
             return "allow", 0.0, "No active security layers reported.", []
+
+        # Determine effective policy preset and thresholds
+        effective_policy = (
+            policy_override
+            or getattr(request, "policy_preset", None)
+            or (request.metadata.get("policy_preset") if request.metadata else None)
+            or self.policy_id
+        )
+        if effective_policy in POLICY_PRESETS:
+            block_threshold = POLICY_PRESETS[effective_policy]["block_threshold"]
+            warn_threshold = POLICY_PRESETS[effective_policy]["warn_threshold"]
+        else:
+            block_threshold = self.block_threshold
+            warn_threshold = self.warn_threshold
 
         raw_max_score = 0.0
         explanations: list[str] = []
@@ -101,18 +116,18 @@ class DecisionEngine:
             return "redact", adjusted_score, reason, explanations
 
         # 2. Hard Block (score exceeds threshold or critical violation confirmed)
-        if adjusted_score >= self.block_threshold or len(critical_violations) > 0:
+        if adjusted_score >= block_threshold or len(critical_violations) > 0:
             if critical_violations:
                 primary_reason = f"Blocked: {critical_violations[0]}"
             else:
                 primary_reason = (
                     f"Blocked: Consolidated risk score {adjusted_score:.2f} exceeded "
-                    f"policy threshold {self.block_threshold:.2f} (preset '{self.policy_id}')."
+                    f"policy threshold {block_threshold:.2f} (preset '{effective_policy}')."
                 )
             return "block", adjusted_score, primary_reason, explanations
 
         # 3. Warn Condition
-        if adjusted_score >= self.warn_threshold:
+        if adjusted_score >= warn_threshold:
             primary_reason = (
                 f"Warn: Elevated risk score {adjusted_score:.2f} flagged for monitoring."
             )

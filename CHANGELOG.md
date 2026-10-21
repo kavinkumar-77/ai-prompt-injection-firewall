@@ -4,6 +4,23 @@ All notable changes to Project AEGIS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-21
+
+### Fixed
+- **Attack Lab & Inspection Arena Telemetry Rendering**:
+  - Eliminated React unhandled `TypeError` exceptions that caused the Attack Lab and Inspection Arena (Playground) to unmount into a blank white page upon executing scans.
+  - Updated `lab/runner.py` `ComparisonResult.to_dict()` to provide dual-key schema compatibility (`without_aegis`/`with_aegis` and `off_result`/`on_result`) alongside complete turn traces, oracle reasoning, and honeypot status.
+  - Fixed forensic evidence span parsing in `PlaygroundPage.tsx` to handle backend tuple spans (`span: [start, end]`), object spans (`start`/`end`), safe substring slicing, and clamp against input bounds.
+  - Resolved field discrepancies in `ScanResponse` by adding typed aliases (`explanation`, `transformed_text`) and normalizing responses in `api.scanText()`.
+  - Implemented dynamic policy preset overrides (`policy_preset`) in `ScanRequest` and `DecisionEngine.evaluate()` enabling genuine side-by-side policy comparisons in the Inspection Arena.
+  - Added React `<ErrorBoundary>` wrapping all dashboard views to intercept render errors and display actionable recovery diagnostics rather than blank screens.
+
+### Changed
+- **Modernized Cybersecurity Console Design & Palette**:
+  - Overhauled dashboard styling to a high-contrast midnight obsidian (`#070A12`) canvas with subtle cyber-mesh radial gradients and slate navy surfaces (`#0D1424`, `#090D18`).
+  - Redesigned navigation sidebar with electric indigo/cyan active glow, sleek borders (`border-slate-800`), and real-time engine health indicators.
+  - Harmonized visual hierarchy, badge contrast, and terminal typography across all views: Overview, Inspection Arena, Attack Lab, Events Log, Policies, Benchmarks, and OWASP Compliance Report.
+
 ## [1.0.0] - 2026-10-20
 
 ### Fixed

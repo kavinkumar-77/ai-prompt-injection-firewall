@@ -58,6 +58,10 @@ class ScanRequest(BaseModel):
         default=None,
         description="Optional active system prompt to evaluate intent alignment or directive clash",
     )
+    policy_preset: str | None = Field(
+        default=None,
+        description="Optional policy preset override for this scan (strict, balanced, lenient)",
+    )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Arbitrary context metadata (e.g. session_id, user_id, document_uri)",
@@ -123,6 +127,14 @@ class ScanResponse(BaseModel):
     sanitized_text: str | None = Field(
         default=None,
         description="Sanitized or redacted version of payload if verdict is redact",
+    )
+    transformed_text: str | None = Field(
+        default=None,
+        description="Alias for sanitized_text for frontend/client compatibility",
+    )
+    explanation: str | None = Field(
+        default=None,
+        description="Alias for rationale or combined explanations for frontend compatibility",
     )
     timestamp: str = Field(
         default_factory=lambda: datetime.now(UTC).isoformat(),

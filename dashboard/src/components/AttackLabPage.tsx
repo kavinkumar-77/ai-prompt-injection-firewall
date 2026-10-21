@@ -8,6 +8,7 @@ import {
   Lock,
   Mail,
   Play,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Terminal,
@@ -15,7 +16,6 @@ import {
 import {
   api,
   LabSummaryReport,
-  ScenarioComparisonResult,
   ScenarioMeta,
 } from "../api";
 
@@ -24,7 +24,7 @@ export const AttackLabPage: React.FC = () => {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>("scenario_02_indirect_email_exfil");
   const [loadingScenarios, setLoadingScenarios] = useState<boolean>(true);
   const [running, setRunning] = useState<boolean>(false);
-  const [result, setResult] = useState<ScenarioComparisonResult | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [labReport, setLabReport] = useState<LabSummaryReport | null>(null);
   const [showBatchModal, setShowBatchModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,21 +75,49 @@ export const AttackLabPage: React.FC = () => {
 
   const selectedScenario = scenarios.find((s) => s.id === selectedScenarioId);
 
+  // Safe data extraction from result (handles both camelCase and snake_case backend models)
+  const withoutAegis = result?.without_aegis || result?.off_result || {};
+  const withAegis = result?.with_aegis || result?.on_result || {};
+  const isEffective = Boolean(
+    result?.protection_effective ??
+    result?.defense_effective ??
+    (!withAegis.attack_succeeded && withoutAegis.attack_succeeded)
+  );
+  const offTraces = withoutAegis.traces || [];
+  const onTraces = withAegis.traces || [];
+  const offOutbox = withoutAegis.outbox_entries || [];
+  const onOutbox = withAegis.outbox_entries || [];
+  const offReason =
+    withoutAegis.oracle_reason ||
+    (withoutAegis.attack_succeeded
+      ? "Attack succeeded: Directives executed by unprotected agent."
+      : "Benign prompt executed normally.");
+  const onReason =
+    withAegis.oracle_reason ||
+    (!withAegis.attack_succeeded
+      ? "Protected: Intercepted and blocked by AEGIS gateway."
+      : "Defense bypassed.");
+  const gatewayExpl =
+    withAegis.gateway_explanation ||
+    (Array.isArray(withAegis.explanations) && withAegis.explanations.length > 0
+      ? withAegis.explanations.join("; ")
+      : "Protected by active AEGIS gateway policies.");
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-gradient-to-r from-[#0C1222] via-[#0E1626] to-[#0A101D] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+            <div className="flex items-center space-x-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] animate-pulse" />
               <h2 className="text-base font-bold text-white font-mono uppercase tracking-tight">
-                Attack Lab &bull; Side-by-Side Runtime Arena
+                Attack Lab &bull; Runtime Security Arena
               </h2>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
-              Test real multi-turn autonomous agents with genuine tools in a sandboxed environment.
-              Compare execution <span className="text-rose-400 font-semibold">Without Protection</span> vs{" "}
+            <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+              Test real multi-turn autonomous agents with sandboxed tool calls. Compare live execution{" "}
+              <span className="text-rose-400 font-semibold">Without Protection</span> vs{" "}
               <span className="text-emerald-400 font-semibold">With AEGIS Gateway</span>.
             </p>
           </div>
@@ -97,9 +125,9 @@ export const AttackLabPage: React.FC = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={handleOpenBatchReport}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 transition-all flex items-center space-x-1.5"
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-slate-200 transition-all flex items-center space-x-1.5 shadow-sm"
             >
-              <Database className="w-3.5 h-3.5 text-blue-400" />
+              <Database className="w-3.5 h-3.5 text-cyan-400" />
               <span>Batch Evaluation Report</span>
             </button>
           </div>
@@ -107,11 +135,11 @@ export const AttackLabPage: React.FC = () => {
 
         {/* Scenario Selection Grid */}
         <div>
-          <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-2">
+          <label className="block text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-2">
             Select Test Scenario ({scenarios.length} Available)
           </label>
           {loadingScenarios ? (
-            <div className="py-4 text-center text-xs text-zinc-400 font-mono">
+            <div className="py-6 text-center text-xs text-slate-500 font-mono">
               Loading scenarios catalog...
             </div>
           ) : (
@@ -125,26 +153,26 @@ export const AttackLabPage: React.FC = () => {
                   }}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     selectedScenarioId === sc.id
-                      ? "bg-blue-600/15 border-blue-500/50 shadow-sm"
-                      : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.12]"
+                      ? "bg-indigo-600/15 border-indigo-500/60 shadow-[0_0_15px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/40"
+                      : "bg-[#0D1424] border-slate-800/80 hover:bg-[#121B2F] hover:border-slate-700"
                   }`}
                 >
                   <div className="flex items-center justify-between text-[10px] font-mono mb-1">
                     <span
                       className={`px-1.5 py-0.2 rounded font-semibold ${
                         sc.severity === "CRITICAL"
-                          ? "bg-rose-500/20 text-rose-400"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                           : sc.severity === "HIGH"
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-emerald-500/20 text-emerald-400"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                       }`}
                     >
                       {sc.severity}
                     </span>
-                    <span className="text-zinc-400">{sc.owasp_mapping}</span>
+                    <span className="text-slate-400">{sc.owasp_mapping}</span>
                   </div>
-                  <div className="font-semibold text-xs text-white truncate">{sc.title}</div>
-                  <div className="text-[11px] text-zinc-400 mt-1 line-clamp-1">{sc.description}</div>
+                  <div className="font-semibold text-xs text-slate-100 truncate">{sc.title}</div>
+                  <div className="text-[11px] text-slate-400 mt-1 line-clamp-1">{sc.description}</div>
                 </button>
               ))}
             </div>
@@ -153,15 +181,15 @@ export const AttackLabPage: React.FC = () => {
 
         {/* Active Scenario Card & Action Button */}
         {selectedScenario && (
-          <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-[#090F1C] border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="text-xs font-bold text-white flex items-center space-x-2">
                 <span>{selectedScenario.title}</span>
-                <span className="text-[10px] font-mono text-zinc-400 bg-white/[0.06] px-2 py-0.5 rounded">
+                <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
                   Target Tool: {selectedScenario.target_tool}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
+              <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
                 {selectedScenario.description}
               </p>
             </div>
@@ -169,16 +197,16 @@ export const AttackLabPage: React.FC = () => {
             <button
               onClick={handleRun}
               disabled={running}
-              className="flex items-center space-x-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md shrink-0"
+              className="flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-lg shadow-indigo-500/25 shrink-0"
             >
               <Play className={`w-4 h-4 fill-current ${running ? "animate-pulse" : ""}`} />
-              <span>{running ? "Executing Agents..." : "Run Side-by-Side Simulation"}</span>
+              <span>{running ? "Executing Simulation..." : "Run Side-by-Side Simulation"}</span>
             </button>
           </div>
         )}
 
         {error && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -189,24 +217,24 @@ export const AttackLabPage: React.FC = () => {
       {result && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
               Live Execution Telemetry &bull; Automated Oracle Evaluation
             </h3>
             <span
               className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase flex items-center space-x-1.5 ${
-                result.protection_effective
-                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                  : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                isEffective
+                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+                  : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
               }`}
             >
-              {result.protection_effective ? (
+              {isEffective ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-400" />
                   <span>PROTECTION EFFECTIVE: AEGIS NEUTRALIZED ATTACK</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1 text-rose-400" />
                   <span>DEFENSE INEFFECTIVE</span>
                 </>
               )}
@@ -215,29 +243,29 @@ export const AttackLabPage: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column: Without AEGIS (Unprotected) */}
-            <div className="bg-[#121826] border border-rose-500/30 rounded-xl p-5 space-y-4 shadow-sm">
+            <div className="bg-[#13111C] border border-rose-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
               <div className="flex items-center justify-between pb-3 border-b border-rose-500/20">
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded bg-rose-500/20 text-rose-400 flex items-center justify-center font-mono font-bold text-xs">
+                  <div className="w-6 h-6 rounded bg-rose-500/20 text-rose-400 flex items-center justify-center font-mono font-bold text-xs border border-rose-500/30">
                     OFF
                   </div>
-                  <span className="font-bold text-sm text-white">Without AEGIS (Unprotected)</span>
+                  <span className="font-bold text-sm text-slate-100">Without AEGIS (Unprotected)</span>
                 </div>
                 <span
                   className={`px-2.5 py-0.5 rounded font-mono text-[11px] font-bold uppercase ${
-                    result.without_aegis.attack_succeeded
+                    withoutAegis.attack_succeeded
                       ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
                       : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
                   }`}
                 >
-                  {result.without_aegis.attack_succeeded ? "ATTACK SUCCEEDED" : "SAFE / PERMITTED"}
+                  {withoutAegis.attack_succeeded ? "ATTACK SUCCEEDED" : "SAFE / PERMITTED"}
                 </span>
               </div>
 
               {/* Honeytoken Status */}
               <div
-                className={`p-3 rounded-lg border text-xs flex items-center justify-between ${
-                  result.without_aegis.honeytoken_compromised
+                className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                  withoutAegis.honeytoken_compromised
                     ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
                     : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
                 }`}
@@ -247,85 +275,98 @@ export const AttackLabPage: React.FC = () => {
                   <div>
                     <div className="font-semibold">Honeytoken Secret Status</div>
                     <div className="text-[11px] opacity-80">
-                      {result.without_aegis.honeytoken_compromised
+                      {withoutAegis.honeytoken_compromised
                         ? "Confidential honeytoken leaked / exfiltrated!"
                         : "No honeytoken secrets exposed"}
                     </div>
                   </div>
                 </div>
-                <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-black/30">
-                  {result.without_aegis.honeytoken_compromised ? "COMPROMISED" : "SAFE"}
+                <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-black/40 border border-white/10">
+                  {withoutAegis.honeytoken_compromised ? "COMPROMISED" : "SAFE"}
                 </span>
               </div>
 
               {/* Oracle Verdict & Reason */}
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 text-xs space-y-1">
-                <div className="text-zinc-400 font-mono text-[10px] uppercase font-semibold">
+              <div className="bg-black/30 border border-slate-800 rounded-xl p-3 text-xs space-y-1">
+                <div className="text-slate-400 font-mono text-[10px] uppercase font-semibold">
                   Automated Oracle Verdict
                 </div>
-                <p className="text-zinc-300 leading-relaxed font-mono text-[11px]">
-                  {result.without_aegis.oracle_reason}
+                <p className="text-slate-300 leading-relaxed font-mono text-[11px]">
+                  {offReason}
                 </p>
               </div>
 
               {/* Agent Conversation & Tool Execution Trace */}
               <div>
-                <div className="text-xs font-semibold text-zinc-300 mb-2 flex items-center space-x-1.5">
+                <div className="text-xs font-semibold text-slate-300 mb-2 flex items-center space-x-1.5">
                   <Terminal className="w-3.5 h-3.5 text-rose-400" />
                   <span>Agent Execution Trace & Tool Invocations</span>
                 </div>
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                  {result.without_aegis.traces.map((tr, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-lg bg-black/40 border border-white/[0.06] text-xs font-mono space-y-1.5"
-                    >
-                      <div className="text-zinc-400 text-[10px] uppercase">Turn {idx + 1} Prompt:</div>
-                      <div className="text-zinc-300 text-[11px] whitespace-pre-wrap break-all line-clamp-3">
-                        {tr.prompt}
-                      </div>
+                  {offTraces.length > 0 ? (
+                    offTraces.map((tr: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-black/40 border border-slate-800/80 text-xs font-mono space-y-2"
+                      >
+                        <div className="text-slate-400 text-[10px] uppercase font-semibold">Turn {idx + 1} Prompt:</div>
+                        <div className="text-slate-300 text-[11px] whitespace-pre-wrap break-all line-clamp-3">
+                          {tr.prompt}
+                        </div>
 
-                      {tr.tool_calls.length > 0 && (
-                        <div className="pt-2 border-t border-white/[0.06] space-y-1">
-                          <div className="text-rose-400 text-[10px] uppercase font-semibold">
-                            Executed Tool Calls:
-                          </div>
-                          {tr.tool_calls.map((tc, cIdx) => (
-                            <div
-                              key={cIdx}
-                              className="bg-rose-500/10 border border-rose-500/20 p-2 rounded text-[11px] text-rose-200"
-                            >
-                              <span className="font-bold">{tc.name}</span>
-                              <pre className="text-[10px] text-zinc-300 mt-1 whitespace-pre-wrap">
-                                {JSON.stringify(tc.arguments, null, 2)}
-                              </pre>
+                        {tr.tool_calls && tr.tool_calls.length > 0 && (
+                          <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                            <div className="text-rose-400 text-[10px] uppercase font-semibold">
+                              Executed Tool Calls:
                             </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {tr.assistant_reply && (
-                        <div className="pt-2 border-t border-white/[0.06]">
-                          <div className="text-zinc-400 text-[10px] uppercase">Assistant Reply:</div>
-                          <div className="text-zinc-300 text-[11px] whitespace-pre-wrap break-all">
-                            {tr.assistant_reply}
+                            {tr.tool_calls.map((tc: any, cIdx: number) => (
+                              <div
+                                key={cIdx}
+                                className="bg-rose-500/10 border border-rose-500/20 p-2 rounded-lg text-[11px] text-rose-200"
+                              >
+                                <span className="font-bold">{tc.name}</span>
+                                <pre className="text-[10px] text-slate-300 mt-1 whitespace-pre-wrap">
+                                  {JSON.stringify(tc.arguments, null, 2)}
+                                </pre>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      )}
+                        )}
+
+                        {tr.assistant_reply && (
+                          <div className="pt-2 border-t border-slate-800">
+                            <div className="text-slate-400 text-[10px] uppercase font-semibold">Assistant Reply:</div>
+                            <div className="text-slate-300 text-[11px] whitespace-pre-wrap break-all">
+                              {tr.assistant_reply}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : withoutAegis.assistant_reply ? (
+                    <div className="p-3 rounded-xl bg-black/40 border border-slate-800/80 text-xs font-mono space-y-1.5">
+                      <div className="text-slate-400 text-[10px] uppercase font-semibold">Assistant Response:</div>
+                      <div className="text-slate-300 text-[11px] whitespace-pre-wrap">
+                        {withoutAegis.assistant_reply}
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="p-3 rounded-xl bg-black/30 text-xs text-slate-500 font-mono text-center">
+                      No tool executions recorded.
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Outbox Preview */}
-              {result.without_aegis.outbox_entries.length > 0 && (
-                <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-xs">
+              {offOutbox.length > 0 && (
+                <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-xs">
                   <div className="text-rose-400 font-semibold mb-1 flex items-center space-x-1.5">
                     <Mail className="w-3.5 h-3.5" />
                     <span>Intercepted Sandbox Outbox (Leaked Messages)</span>
                   </div>
-                  <div className="font-mono text-zinc-300 text-[10px] space-y-1">
-                    {result.without_aegis.outbox_entries.map((msg, mIdx) => (
+                  <div className="font-mono text-slate-300 text-[10px] space-y-1">
+                    {offOutbox.map((msg: string, mIdx: number) => (
                       <div key={mIdx} className="p-1.5 bg-black/40 rounded whitespace-pre-wrap">
                         {msg}
                       </div>
@@ -336,29 +377,29 @@ export const AttackLabPage: React.FC = () => {
             </div>
 
             {/* Right Column: With AEGIS (Protected Gateway) */}
-            <div className="bg-[#121826] border border-emerald-500/30 rounded-xl p-5 space-y-4 shadow-sm">
+            <div className="bg-[#0D1822] border border-emerald-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
               <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-xs">
+                  <div className="w-6 h-6 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-xs border border-emerald-500/30">
                     ON
                   </div>
-                  <span className="font-bold text-sm text-white">With AEGIS Gateway (Protected)</span>
+                  <span className="font-bold text-sm text-slate-100">With AEGIS Gateway (Protected)</span>
                 </div>
                 <span
                   className={`px-2.5 py-0.5 rounded font-mono text-[11px] font-bold uppercase ${
-                    result.with_aegis.attack_succeeded
+                    withAegis.attack_succeeded
                       ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
                       : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
                   }`}
                 >
-                  {result.with_aegis.attack_succeeded ? "ATTACK SUCCEEDED" : "ATTACK BLOCKED"}
+                  {withAegis.attack_succeeded ? "ATTACK SUCCEEDED" : "ATTACK BLOCKED"}
                 </span>
               </div>
 
               {/* Honeytoken Status */}
               <div
-                className={`p-3 rounded-lg border text-xs flex items-center justify-between ${
-                  result.with_aegis.honeytoken_compromised
+                className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                  withAegis.honeytoken_compromised
                     ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
                     : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
                 }`}
@@ -368,92 +409,101 @@ export const AttackLabPage: React.FC = () => {
                   <div>
                     <div className="font-semibold">Honeytoken Secret Status</div>
                     <div className="text-[11px] opacity-80">
-                      {result.with_aegis.honeytoken_compromised
+                      {withAegis.honeytoken_compromised
                         ? "Honeytoken leaked"
                         : "Honeytoken 100% protected and safe in sandbox"}
                     </div>
                   </div>
                 </div>
-                <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-black/30">
-                  {result.with_aegis.honeytoken_compromised ? "COMPROMISED" : "PROTECTED"}
+                <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-black/40 border border-white/10">
+                  {withAegis.honeytoken_compromised ? "COMPROMISED" : "PROTECTED"}
                 </span>
               </div>
 
               {/* Oracle Verdict & Reason */}
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 text-xs space-y-1">
-                <div className="text-zinc-400 font-mono text-[10px] uppercase font-semibold">
+              <div className="bg-black/30 border border-slate-800 rounded-xl p-3 text-xs space-y-1">
+                <div className="text-slate-400 font-mono text-[10px] uppercase font-semibold">
                   Automated Oracle Verdict
                 </div>
-                <p className="text-zinc-300 leading-relaxed font-mono text-[11px]">
-                  {result.with_aegis.oracle_reason}
+                <p className="text-slate-300 leading-relaxed font-mono text-[11px]">
+                  {onReason}
                 </p>
               </div>
 
               {/* AEGIS Defense Explanation & Contributing Layers */}
-              {result.with_aegis.gateway_explanation && (
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs space-y-1.5">
-                  <div className="text-blue-300 font-semibold flex items-center space-x-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
+              {gatewayExpl && (
+                <div className="bg-indigo-500/10 border border-indigo-500/25 rounded-xl p-3 text-xs space-y-1.5">
+                  <div className="text-indigo-300 font-semibold flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     <span>AEGIS Defense Rationale</span>
                   </div>
-                  <p className="text-zinc-300 leading-relaxed font-mono text-[11px]">
-                    {result.with_aegis.gateway_explanation}
+                  <p className="text-slate-300 leading-relaxed font-mono text-[11px]">
+                    {gatewayExpl}
                   </p>
                 </div>
               )}
 
               {/* Agent Conversation & Tool Execution Trace */}
               <div>
-                <div className="text-xs font-semibold text-zinc-300 mb-2 flex items-center space-x-1.5">
+                <div className="text-xs font-semibold text-slate-300 mb-2 flex items-center space-x-1.5">
                   <Terminal className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Protected Execution Trace</span>
                 </div>
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                  {result.with_aegis.traces.map((tr, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-lg bg-black/40 border border-white/[0.06] text-xs font-mono space-y-1.5"
-                    >
-                      <div className="text-zinc-400 text-[10px] uppercase">Turn {idx + 1} Prompt:</div>
-                      <div className="text-zinc-300 text-[11px] whitespace-pre-wrap break-all line-clamp-3">
-                        {tr.prompt}
-                      </div>
-
-                      {tr.blocked_by_gateway && (
-                        <div className="p-2 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px]">
-                          <span className="font-bold">[GATEWAY POLICY BLOCK]: </span>
-                          <span>{tr.gateway_reason || "Prompt injection violation detected."}</span>
+                  {onTraces.length > 0 ? (
+                    onTraces.map((tr: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-black/40 border border-slate-800/80 text-xs font-mono space-y-2"
+                      >
+                        <div className="text-slate-400 text-[10px] uppercase font-semibold">Turn {idx + 1} Prompt:</div>
+                        <div className="text-slate-300 text-[11px] whitespace-pre-wrap break-all line-clamp-3">
+                          {tr.prompt}
                         </div>
-                      )}
 
-                      {tr.tool_results.some((t) => t.output.includes("[AEGIS POLICY BLOCK]")) && (
-                        <div className="p-2 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px]">
-                          <span className="font-bold">[TOOL POLICY BLOCK]: </span>
-                          <span>Capability policy prevented unauthorized tool execution.</span>
-                        </div>
-                      )}
-
-                      {tr.assistant_reply && !tr.blocked_by_gateway && (
-                        <div className="pt-2 border-t border-white/[0.06]">
-                          <div className="text-zinc-400 text-[10px] uppercase">Assistant Reply:</div>
-                          <div className="text-zinc-300 text-[11px] whitespace-pre-wrap break-all">
-                            {tr.assistant_reply}
+                        {tr.blocked_by_gateway && (
+                          <div className="p-2 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] flex items-center space-x-1.5">
+                            <ShieldAlert className="w-4 h-4 shrink-0 text-rose-400" />
+                            <div>
+                              <span className="font-bold">[GATEWAY POLICY BLOCK]: </span>
+                              <span>{tr.gateway_reason || "Prompt injection violation detected."}</span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+
+                        {tr.assistant_reply && !tr.blocked_by_gateway && (
+                          <div className="pt-2 border-t border-slate-800">
+                            <div className="text-slate-400 text-[10px] uppercase font-semibold">Assistant Reply:</div>
+                            <div className="text-slate-300 text-[11px] whitespace-pre-wrap break-all">
+                              {tr.assistant_reply}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : withAegis.assistant_reply ? (
+                    <div className="p-3 rounded-xl bg-black/40 border border-slate-800/80 text-xs font-mono space-y-1.5">
+                      <div className="text-slate-400 text-[10px] uppercase font-semibold">Protected Response:</div>
+                      <div className="text-slate-300 text-[11px] whitespace-pre-wrap">
+                        {withAegis.assistant_reply}
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="p-3 rounded-xl bg-black/30 text-xs text-slate-500 font-mono text-center">
+                      Execution contained safely by gateway.
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Clean Outbox Status */}
-              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-xs flex items-center justify-between">
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-emerald-300">
                   <ShieldCheck className="w-4 h-4" />
                   <span className="font-semibold">Sandbox Outbox Clean</span>
                 </div>
-                <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">
-                  0 bytes leaked
+                <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                  {onOutbox.length} messages leaked
                 </span>
               </div>
             </div>
@@ -463,20 +513,20 @@ export const AttackLabPage: React.FC = () => {
 
       {/* Batch Evaluation Summary Modal */}
       {showBatchModal && labReport && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#121826] border border-white/[0.1] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0C1222] border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div>
                 <h3 className="text-base font-bold text-white font-mono">
                   Attack Lab Batch Evaluation Report
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   Automated offline evaluation across {labReport.total_scenarios_evaluated} realistic test scenarios.
                 </p>
               </div>
               <button
                 onClick={() => setShowBatchModal(false)}
-                className="text-zinc-400 hover:text-white text-xs px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]"
+                className="text-slate-400 hover:text-white text-xs px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700"
               >
                 Close
               </button>
@@ -484,29 +534,29 @@ export const AttackLabPage: React.FC = () => {
 
             {/* Overall Headline Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="text-zinc-400 text-[11px]">ASR Without AEGIS</div>
+              <div className="p-3.5 rounded-xl bg-[#090E1A] border border-slate-800">
+                <div className="text-slate-400 text-[11px]">ASR Without AEGIS</div>
                 <div className="text-2xl font-bold font-mono text-rose-400 mt-1">
                   {(labReport.overall_metrics.attack_success_rate_without_aegis * 100).toFixed(1)}%
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="text-zinc-400 text-[11px]">ASR With AEGIS</div>
+              <div className="p-3.5 rounded-xl bg-[#090E1A] border border-slate-800">
+                <div className="text-slate-400 text-[11px]">ASR With AEGIS</div>
                 <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
                   {(labReport.overall_metrics.attack_success_rate_with_aegis * 100).toFixed(1)}%
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="text-zinc-400 text-[11px]">Risk Reduction</div>
-                <div className="text-2xl font-bold font-mono text-blue-400 mt-1">
+              <div className="p-3.5 rounded-xl bg-[#090E1A] border border-slate-800">
+                <div className="text-slate-400 text-[11px]">Risk Reduction</div>
+                <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
                   {labReport.overall_metrics.risk_reduction_pct.toFixed(1)}%
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="text-zinc-400 text-[11px]">Control FPR</div>
+              <div className="p-3.5 rounded-xl bg-[#090E1A] border border-slate-800">
+                <div className="text-slate-400 text-[11px]">Control FPR</div>
                 <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
                   {(labReport.overall_metrics.false_positive_rate_on_controls * 100).toFixed(1)}%
                 </div>
@@ -514,9 +564,9 @@ export const AttackLabPage: React.FC = () => {
             </div>
 
             {/* Scenario Breakdown Table */}
-            <div className="border border-white/[0.06] rounded-xl overflow-hidden text-xs">
+            <div className="border border-slate-800 rounded-xl overflow-hidden text-xs">
               <table className="w-full text-left">
-                <thead className="bg-white/[0.04] text-[11px] font-mono text-zinc-400">
+                <thead className="bg-[#090E1A] text-[11px] font-mono text-slate-400">
                   <tr>
                     <th className="p-3">Scenario</th>
                     <th className="p-3">Category</th>
@@ -525,11 +575,11 @@ export const AttackLabPage: React.FC = () => {
                     <th className="p-3">Oracle Summary</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-slate-800">
                   {labReport.scenario_results.map((sc, sIdx) => (
-                    <tr key={sIdx} className="hover:bg-white/[0.01]">
-                      <td className="p-3 font-semibold text-white">{sc.title}</td>
-                      <td className="p-3 text-zinc-400 font-mono text-[11px]">{sc.category}</td>
+                    <tr key={sIdx} className="hover:bg-slate-800/40">
+                      <td className="p-3 font-semibold text-slate-100">{sc.title}</td>
+                      <td className="p-3 text-slate-400 font-mono text-[11px]">{sc.category}</td>
                       <td className="p-3 text-center">
                         <span
                           className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
@@ -552,7 +602,7 @@ export const AttackLabPage: React.FC = () => {
                           {(sc.asr_with_aegis * 100).toFixed(0)}% ASR
                         </span>
                       </td>
-                      <td className="p-3 text-zinc-300 font-mono text-[11px]">{sc.oracle_summary_protected}</td>
+                      <td className="p-3 text-slate-300 font-mono text-[11px]">{sc.oracle_summary_protected}</td>
                     </tr>
                   ))}
                 </tbody>

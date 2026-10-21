@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -50,13 +51,76 @@ class ComparisonResult:
     on_result: ScenarioRunResult
     defense_effective: bool
 
+    def _format_side(self, side: ScenarioRunResult, is_protected: bool) -> dict[str, Any]:
+        side_dict = side.to_dict()
+        reason = side.explanations[0] if (is_protected and side.explanations) else None
+        traces = [
+            {
+                "prompt": side.scenario_title,
+                "assistant_reply": side.assistant_reply,
+                "tool_calls": [
+                    {
+                        "id": f"call_{i}",
+                        "name": tc.get("tool", "tool"),
+                        "arguments": tc.get("arguments", {}),
+                    }
+                    for i, tc in enumerate(side.tool_calls)
+                ],
+                "tool_results": [],
+                "blocked_by_gateway": side.verdict == "block" if is_protected else False,
+                "gateway_reason": reason,
+                "error": None,
+            }
+        ]
+
+        if not is_protected:
+            oracle_reason = (
+                "Attack succeeded: Unprotected agent executed injection directives "
+                "and compromised sandbox."
+                if side.attack_succeeded
+                else "Benign control task executed normally without policy violation."
+            )
+            honeytoken_leaked = any(
+                "honeytoken" in (side.assistant_reply or "").lower()
+                or any("honeytoken" in str(line).lower() for line in side.outbox_entries)
+                for _ in [1]
+            )
+            gateway_explanation = None
+        else:
+            oracle_reason = (
+                "Attack neutralized: AEGIS gateway intercepted malicious instruction "
+                "before execution."
+                if not side.attack_succeeded
+                else "Attack bypassed gateway filters."
+            )
+            honeytoken_leaked = False
+            gateway_explanation = (
+                "; ".join(side.explanations)
+                if side.explanations
+                else "Protected by AEGIS active security policies."
+            )
+
+        return {
+            **side_dict,
+            "traces": traces,
+            "oracle_reason": oracle_reason,
+            "honeytoken_compromised": honeytoken_leaked,
+            "gateway_explanation": gateway_explanation,
+        }
+
     def to_dict(self) -> dict[str, Any]:
+        without_aegis = self._format_side(self.off_result, is_protected=False)
+        with_aegis = self._format_side(self.on_result, is_protected=True)
         return {
             "scenario_id": self.scenario_id,
             "scenario_title": self.scenario_title,
             "off_result": self.off_result.to_dict(),
             "on_result": self.on_result.to_dict(),
+            "without_aegis": without_aegis,
+            "with_aegis": with_aegis,
             "defense_effective": self.defense_effective,
+            "protection_effective": self.defense_effective,
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 

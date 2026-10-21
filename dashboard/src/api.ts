@@ -65,9 +65,12 @@ export interface SecurityEvent {
 }
 
 export interface EvidenceSpan {
-  start: number;
-  end: number;
-  snippet: string;
+  start?: number;
+  end?: number;
+  span?: [number, number] | null;
+  snippet?: string;
+  kind?: string;
+  detail?: string;
   rule_id?: string;
 }
 
@@ -76,7 +79,8 @@ export interface LayerResult {
   score: number;
   label: string;
   evidence: EvidenceSpan[];
-  metadata: Record<string, any>;
+  metadata?: Record<string, any>;
+  latency_ms?: number;
 }
 
 export interface ScanResponse {
@@ -86,8 +90,12 @@ export interface ScanResponse {
   policy_id: string;
   latency_ms: number;
   explanation: string;
+  rationale?: string | null;
+  explanations?: string[];
   layers: LayerResult[];
   transformed_text?: string | null;
+  sanitized_text?: string | null;
+  timestamp?: string;
 }
 
 export interface PolicyPreset {
@@ -270,8 +278,20 @@ export const api = {
         metadata: metadata || {},
       }),
     });
-    if (!res.ok) throw new Error(`Scan request failed: ${res.statusText}`);
-    return res.json();
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Scan request failed (${res.status}): ${errText || res.statusText}`);
+    }
+    const data = await res.json();
+    return {
+      ...data,
+      explanation:
+        data.rationale ||
+        (Array.isArray(data.explanations) && data.explanations.length > 0
+          ? data.explanations.join(" • ")
+          : data.explanation || "Inspection analysis completed."),
+      transformed_text: data.sanitized_text ?? data.transformed_text ?? null,
+    };
   },
 
   async getPolicies(): Promise<PolicyPreset[]> {

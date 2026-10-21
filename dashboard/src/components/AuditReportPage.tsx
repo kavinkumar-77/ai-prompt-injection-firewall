@@ -27,20 +27,20 @@ export const AuditReportPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Action Bar (Hidden on print) */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-5 shadow-sm flex items-center justify-between print:hidden">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm flex items-center justify-between print:hidden">
         <div>
           <h2 className="text-base font-bold text-white flex items-center space-x-2">
-            <FileText className="w-5 h-5 text-blue-400" />
+            <FileText className="w-5 h-5 text-indigo-400" />
             <span>Executive Security & Compliance Audit Report</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Real-time audit synthesis mapped to OWASP LLM Top 10 vulnerabilities.
           </p>
         </div>
 
         <button
           onClick={handlePrint}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all shadow-md"
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20"
         >
           <Printer className="w-4 h-4" />
           <span>Print / Export PDF</span>
@@ -48,7 +48,7 @@ export const AuditReportPage: React.FC = () => {
       </div>
 
       {/* Printable Report Document Surface */}
-      <div className="bg-[#121826] print:bg-white print:text-black border border-white/[0.08] print:border-none rounded-2xl p-8 space-y-8 shadow-xl max-w-5xl mx-auto">
+      <div className="bg-[#0D1424] print:bg-white print:text-black border border-slate-800 print:border-none rounded-2xl p-8 space-y-8 shadow-xl max-w-5xl mx-auto">
         {/* Document Header */}
         <div className="border-b border-white/[0.1] print:border-zinc-300 pb-6 flex items-start justify-between">
           <div>

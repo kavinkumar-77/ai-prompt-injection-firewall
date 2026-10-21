@@ -74,7 +74,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       {/* Top Banner / System Health Bar */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
             <ShieldCheck className="w-5 h-5" />
@@ -115,7 +115,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
       {/* 4 Primary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1 */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
+        <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-xs font-mono uppercase tracking-wider font-medium">Total Scanned</span>
             <div className="w-7 h-7 rounded-md bg-white/[0.06] flex items-center justify-center text-zinc-300">
@@ -134,7 +134,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* KPI 2 */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
+        <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-xs font-mono uppercase tracking-wider font-medium">Threats Blocked</span>
             <div className="w-7 h-7 rounded-md bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -153,7 +153,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* KPI 3 */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
+        <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-xs font-mono uppercase tracking-wider font-medium">P95 Inspection Latency</span>
             <div className="w-7 h-7 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
@@ -172,7 +172,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* KPI 4 */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
+        <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm hover:border-white/[0.12] transition-all">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-xs font-mono uppercase tracking-wider font-medium">Hard-Negative FPR</span>
             <div className="w-7 h-7 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -194,7 +194,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
       {/* Grid: Verdict Distribution & Layer Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Card 1: Verdict Breakdown */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+        <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div className="flex items-center space-x-2">
               <Layers className="w-4 h-4 text-blue-400" />
@@ -271,7 +271,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Card 2: Gateway Defense Layers & Hardware Health */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+        <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div className="flex items-center space-x-2">
               <Cpu className="w-4 h-4 text-emerald-400" />
@@ -319,7 +319,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
       </div>
 
       {/* Recent Recorded Threats Section */}
-      <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm">
         <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
           <div className="flex items-center space-x-2">
             <Database className="w-4 h-4 text-zinc-400" />

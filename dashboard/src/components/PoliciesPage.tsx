@@ -59,14 +59,14 @@ export const PoliciesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-white flex items-center space-x-2">
-              <Sliders className="w-5 h-5 text-blue-400" />
+              <Sliders className="w-5 h-5 text-indigo-400" />
               <span>Security Policies & Gating Presets</span>
             </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Configure multi-layer thresholds, agent capability restrictions, and inspection sensitivity.
             </p>
           </div>
@@ -74,7 +74,7 @@ export const PoliciesPage: React.FC = () => {
           <button
             onClick={loadPolicies}
             disabled={loading}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center space-x-1.5 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 flex items-center space-x-1.5 transition-all"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Reload Policies</span>
@@ -100,7 +100,7 @@ export const PoliciesPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Strict Card */}
         <div
-          className={`bg-[#121826] border rounded-xl p-5 transition-all flex flex-col justify-between ${
+          className={`bg-[#0D1424] border rounded-xl p-5 transition-all flex flex-col justify-between ${
             activePreset === "strict"
               ? "border-blue-500 ring-1 ring-blue-500/50 shadow-md"
               : "border-white/[0.08] hover:border-white/[0.14]"
@@ -147,7 +147,7 @@ export const PoliciesPage: React.FC = () => {
 
         {/* Balanced Card */}
         <div
-          className={`bg-[#121826] border rounded-xl p-5 transition-all flex flex-col justify-between ${
+          className={`bg-[#0D1424] border rounded-xl p-5 transition-all flex flex-col justify-between ${
             activePreset === "balanced"
               ? "border-blue-500 ring-1 ring-blue-500/50 shadow-md"
               : "border-white/[0.08] hover:border-white/[0.14]"
@@ -194,7 +194,7 @@ export const PoliciesPage: React.FC = () => {
 
         {/* Lenient Card */}
         <div
-          className={`bg-[#121826] border rounded-xl p-5 transition-all flex flex-col justify-between ${
+          className={`bg-[#0D1424] border rounded-xl p-5 transition-all flex flex-col justify-between ${
             activePreset === "lenient"
               ? "border-blue-500 ring-1 ring-blue-500/50 shadow-md"
               : "border-white/[0.08] hover:border-white/[0.14]"
@@ -243,7 +243,7 @@ export const PoliciesPage: React.FC = () => {
       {/* Grid: Capability Policy (YAML) & Audit Trail */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Capability Policy Schema (YAML) */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-3">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div className="flex items-center space-x-2">
               <Code className="w-4 h-4 text-emerald-400" />
@@ -284,7 +284,7 @@ context_taint_policy:
         </div>
 
         {/* Policy Change Audit Log */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-3">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div className="flex items-center space-x-2">
               <History className="w-4 h-4 text-blue-400" />

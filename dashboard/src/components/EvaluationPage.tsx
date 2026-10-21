@@ -36,7 +36,7 @@ export const EvaluationPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
@@ -73,7 +73,7 @@ export const EvaluationPage: React.FC = () => {
       {/* Top 4 Measured Headline KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Precision */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm">
           <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
             Overall Test Precision
           </div>
@@ -89,7 +89,7 @@ export const EvaluationPage: React.FC = () => {
         </div>
 
         {/* KPI 2: Hard-Negative FPR */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm">
           <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
             Hard-Negative FPR
           </div>
@@ -107,7 +107,7 @@ export const EvaluationPage: React.FC = () => {
         </div>
 
         {/* KPI 3: Attack Lab Risk Reduction */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm">
           <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
             Lab Risk Reduction
           </div>
@@ -123,7 +123,7 @@ export const EvaluationPage: React.FC = () => {
         </div>
 
         {/* KPI 4: Single-Thread CPU Latency */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm">
           <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
             CPU P50 Latency
           </div>
@@ -149,7 +149,7 @@ export const EvaluationPage: React.FC = () => {
       {/* Grid: Confusion Matrix & Operating Points */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Confusion Matrix Card */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div className="flex items-center space-x-2">
               <Database className="w-4 h-4 text-emerald-400" />
@@ -198,7 +198,7 @@ export const EvaluationPage: React.FC = () => {
         </div>
 
         {/* Operating Points Table */}
-        <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+        <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div className="flex items-center space-x-2">
               <LineChart className="w-4 h-4 text-blue-400" />
@@ -261,7 +261,7 @@ export const EvaluationPage: React.FC = () => {
       </div>
 
       {/* Attack Lab Batch Results Summary Table */}
-      <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-[#0D1424] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />

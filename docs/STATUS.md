@@ -3,6 +3,10 @@
 ## Honest Current State (All Phases 1–9 Complete — Production Ready)
 
 ### What Works (Completed & Operational)
+* **Hardened Operator Console & Inspection Arena (`dashboard/`)**:
+  - **Attack Lab & Multi-Turn Simulation**: Side-by-side execution showing unprotected agent vulnerability vs. AEGIS-protected containment with turn-by-turn trace viewer, honeytoken integrity tracking, and sandbox outbox auditing.
+  - **Multi-Layer Inspection Arena**: Real-time interactive inspection across all 6 defense layers with dynamic trust-boundary tags (`system`, `user`, `retrieved`, `tool_output`), side-by-side policy comparisons, bounded evidence span highlighting, and sanitized credential preview.
+  - **Modern Cyber Console Theme**: Dark midnight obsidian palette (`#070A12`) with slate navy surfaces (`#0D1424`), electric indigo/cyan accents, and built-in React Error Boundary resilience preventing blank screens.
 * **Comprehensive Documentation & Technical Demo Suite (`docs/`, `README.md`)**:
   - **Architecture Specification (`docs/architecture.md`)**: Component descriptions, pipeline data flow, and Mermaid sequence diagrams for text scanning, SSE streaming proxying, and tool-call taint guards.
   - **Threat Model (`docs/threat-model.md`)**: Detailed asset classification, adversary capabilities, STRIDE threat analysis, trust boundaries, and residual risk assessment.

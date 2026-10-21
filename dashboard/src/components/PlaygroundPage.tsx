@@ -101,44 +101,67 @@ export const PlaygroundPage: React.FC = () => {
   };
 
   const renderHighlightedText = (result: ScanResponse) => {
-    // Collect all evidence spans
-    const spans: Array<{ start: number; end: number; layer: string; label: string }> = [];
-    result.layers.forEach((layer) => {
-      layer.evidence?.forEach((ev) => {
-        if (typeof ev.start === "number" && typeof ev.end === "number" && ev.start < ev.end) {
-          spans.push({ start: ev.start, end: ev.end, layer: layer.layer, label: layer.label });
+    // Extract and normalize all evidence spans
+    const spans: Array<{ start: number; end: number; layer: string; label: string; detail: string }> = [];
+
+    (result.layers || []).forEach((layer) => {
+      (layer.evidence || []).forEach((ev: any) => {
+        let start = -1;
+        let end = -1;
+
+        if (Array.isArray(ev.span) && ev.span.length >= 2) {
+          start = Number(ev.span[0]);
+          end = Number(ev.span[1]);
+        } else if (typeof ev.start === "number" && typeof ev.end === "number") {
+          start = ev.start;
+          end = ev.end;
+        }
+
+        if (start >= 0 && end > start && end <= text.length) {
+          spans.push({
+            start,
+            end,
+            layer: layer.layer || "scanner",
+            label: layer.label || "flagged",
+            detail: ev.detail || ev.kind || layer.label || "suspicious artifact",
+          });
         }
       });
     });
 
     if (spans.length === 0) {
       return (
-        <div className="font-mono text-xs text-zinc-300 p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg whitespace-pre-wrap break-all">
+        <div className="font-mono text-xs text-slate-300 p-3.5 bg-[#090D18] border border-slate-800/80 rounded-xl whitespace-pre-wrap break-all leading-relaxed">
           {text}
         </div>
       );
     }
 
-    // Sort spans by start
+    // Sort spans by start asc
     spans.sort((a, b) => a.start - b.start);
 
     const elements: React.ReactNode[] = [];
     let lastIdx = 0;
 
     spans.forEach((sp, idx) => {
+      // Handle non-overlapping gap
       if (sp.start > lastIdx) {
         elements.push(
-          <span key={`text-${idx}`}>{text.substring(lastIdx, Math.min(text.length, sp.start))}</span>
+          <span key={`text-${idx}`}>{text.substring(lastIdx, sp.start)}</span>
         );
+        lastIdx = sp.start;
       }
+
+      // Handle span (clamp to prevent reverse bounds)
       const safeStart = Math.max(lastIdx, sp.start);
-      const safeEnd = Math.min(text.length, sp.end);
+      const safeEnd = Math.max(safeStart, Math.min(text.length, sp.end));
+
       if (safeEnd > safeStart) {
         elements.push(
           <mark
             key={`mark-${idx}`}
-            className="bg-rose-500/25 text-rose-300 border-b-2 border-rose-500 px-0.5 rounded font-mono font-semibold"
-            title={`Flagged by ${sp.layer}: ${sp.label}`}
+            className="bg-rose-500/25 text-rose-300 border-b-2 border-rose-500 px-1 py-0.5 rounded font-mono font-semibold"
+            title={`[${sp.layer}] ${sp.detail}`}
           >
             {text.substring(safeStart, safeEnd)}
           </mark>
@@ -152,7 +175,7 @@ export const PlaygroundPage: React.FC = () => {
     }
 
     return (
-      <div className="font-mono text-xs text-zinc-200 p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg whitespace-pre-wrap break-all leading-relaxed">
+      <div className="font-mono text-xs text-slate-200 p-3.5 bg-[#090D18] border border-slate-800/80 rounded-xl whitespace-pre-wrap break-all leading-relaxed">
         {elements}
       </div>
     );
@@ -163,21 +186,30 @@ export const PlaygroundPage: React.FC = () => {
     const isRedacted = result.verdict === "redact";
     const isAllowed = result.verdict === "allow";
 
+    const explanationText =
+      result.explanation ||
+      result.rationale ||
+      (Array.isArray(result.explanations) && result.explanations.length > 0
+        ? result.explanations.join(" • ")
+        : "Payload successfully analyzed across all security inspection layers.");
+
+    const sanitizedOutput = result.transformed_text || result.sanitized_text;
+
     return (
-      <div className="bg-[#121826] border border-white/[0.08] rounded-xl p-5 space-y-4">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between pb-3.5 border-b border-slate-800/80">
           <div>
-            <div className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <div className="text-xs font-mono uppercase tracking-wider text-slate-400">
               Policy Preset: <span className="text-white font-semibold">{policyLabel}</span>
             </div>
-            <div className="text-[11px] font-mono text-zinc-400 mt-0.5">
-              Request ID: {result.request_id.slice(0, 16)}... &bull; Latency: {result.latency_ms.toFixed(1)} ms
+            <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+              Request ID: {(result.request_id || "req-aegis").slice(0, 16)}... &bull; Latency: {(result.latency_ms ?? 0).toFixed(1)} ms
             </div>
           </div>
 
           <div
-            className={`px-3 py-1 rounded-lg font-mono text-xs font-bold uppercase flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-lg font-mono text-xs font-bold uppercase flex items-center space-x-1.5 shadow-sm ${
               isBlocked
                 ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                 : isRedacted
@@ -196,81 +228,81 @@ export const PlaygroundPage: React.FC = () => {
 
         {/* Risk Score Progress */}
         <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-400">Composite Risk Score</span>
+          <div className="flex justify-between text-xs mb-1.5">
+            <span className="text-slate-400 font-medium">Composite Risk Score</span>
             <span className="font-mono font-bold text-white">
-              {(result.risk_score * 100).toFixed(1)}%
+              {((result.risk_score ?? 0) * 100).toFixed(1)}%
             </span>
           </div>
-          <div className="w-full bg-white/[0.06] rounded-full h-2.5 overflow-hidden">
+          <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
             <div
-              className={`h-2.5 rounded-full transition-all duration-500 ${
-                result.risk_score >= 0.7
+              className={`h-full rounded-full transition-all duration-500 ${
+                (result.risk_score ?? 0) >= 0.7
                   ? "bg-rose-500"
-                  : result.risk_score >= 0.4
+                  : (result.risk_score ?? 0) >= 0.4
                     ? "bg-amber-500"
                     : "bg-emerald-500"
               }`}
-              style={{ width: `${Math.min(100, result.risk_score * 100)}%` }}
+              style={{ width: `${Math.min(100, Math.max(0, (result.risk_score ?? 0) * 100))}%` }}
             />
           </div>
         </div>
 
         {/* Explanation */}
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 text-xs">
-          <div className="font-semibold text-zinc-200 mb-1 flex items-center space-x-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+        <div className="bg-[#090D18] border border-slate-800/80 rounded-xl p-3.5 text-xs">
+          <div className="font-semibold text-slate-200 mb-1 flex items-center space-x-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
             <span>Forensic Decision Rationale</span>
           </div>
-          <p className="text-zinc-400 leading-relaxed">{result.explanation}</p>
+          <p className="text-slate-300 leading-relaxed font-sans">{explanationText}</p>
         </div>
 
         {/* Highlighted Evidence Spans */}
         <div>
-          <div className="text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+          <div className="text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
             <span>Evidence Spans & Highlighted Artifacts</span>
-            <span className="text-[10px] font-mono text-zinc-400">Direct layer attribution</span>
+            <span className="text-[10px] font-mono text-slate-400">Direct layer attribution</span>
           </div>
           {renderHighlightedText(result)}
         </div>
 
         {/* Redacted text preview if available */}
-        {result.transformed_text && result.transformed_text !== text && (
-          <div className="bg-white/[0.02] border border-amber-500/20 rounded-lg p-3 text-xs">
+        {sanitizedOutput && sanitizedOutput !== text && (
+          <div className="bg-amber-500/[0.04] border border-amber-500/20 rounded-xl p-3.5 text-xs">
             <div className="text-amber-400 font-semibold mb-1 flex items-center space-x-1.5">
               <Key className="w-3.5 h-3.5" />
               <span>Sanitized Output (Credentials / PII Redacted)</span>
             </div>
-            <div className="font-mono text-zinc-300 text-[11px] whitespace-pre-wrap break-all">
-              {result.transformed_text}
+            <div className="font-mono text-slate-300 text-[11px] whitespace-pre-wrap break-all leading-relaxed">
+              {sanitizedOutput}
             </div>
           </div>
         )}
 
         {/* 6-Layer Inspector Table */}
         <div>
-          <div className="text-xs font-semibold text-zinc-300 mb-2">Multi-Layer Inspector Breakdown</div>
-          <div className="divide-y divide-white/[0.04] border border-white/[0.06] rounded-lg overflow-hidden text-xs">
-            {result.layers.map((layer, idx) => (
-              <div key={idx} className="p-2.5 flex items-center justify-between bg-white/[0.01]">
+          <div className="text-xs font-semibold text-slate-300 mb-2">Multi-Layer Inspector Breakdown</div>
+          <div className="divide-y divide-slate-800/60 border border-slate-800 rounded-xl overflow-hidden text-xs bg-[#090D18]">
+            {(result.layers || []).map((layer, idx) => (
+              <div key={idx} className="p-2.5 flex items-center justify-between hover:bg-slate-800/30 transition-colors">
                 <div className="flex items-center space-x-2">
-                  <span className="font-mono text-[11px] text-zinc-400 uppercase font-semibold">
+                  <span className="font-mono text-[11px] text-slate-400 uppercase font-semibold">
                     {layer.layer}
                   </span>
-                  <span className="text-zinc-400 text-[11px]">&bull;</span>
-                  <span className="text-zinc-300 text-[11px] font-medium">{layer.label}</span>
+                  <span className="text-slate-600 text-[11px]">&bull;</span>
+                  <span className="text-slate-300 text-[11px] font-medium">{layer.label}</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-[10px] text-zinc-400 font-mono">
+                  <span className="text-[10px] text-slate-500 font-mono">
                     {layer.evidence?.length || 0} span(s)
                   </span>
                   <span
-                    className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded ${
+                    className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded ${
                       layer.score >= 0.7
-                        ? "bg-rose-500/15 text-rose-400"
+                        ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                         : layer.score >= 0.4
-                          ? "bg-amber-500/15 text-amber-400"
-                          : "bg-emerald-500/15 text-emerald-400"
+                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                          : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                     }`}
                   >
                     {(layer.score * 100).toFixed(0)}%
@@ -287,14 +319,14 @@ export const PlaygroundPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Controls Header */}
-      <div className="bg-[#111622] border border-white/[0.08] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-[#0D1424] border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-white flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-blue-400" />
+              <Shield className="w-5 h-5 text-indigo-400" />
               <span>Multi-Layer Inspection Playground</span>
             </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Execute live scans across the 6-layer AEGIS defense pipeline with trust-aware source tags.
             </p>
           </div>
@@ -304,8 +336,8 @@ export const PlaygroundPage: React.FC = () => {
               onClick={() => setCompareMode(!compareMode)}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                 compareMode
-                  ? "bg-blue-600/20 text-blue-300 border-blue-500/40"
-                  : "bg-white/[0.04] text-zinc-400 border-white/[0.08] hover:bg-white/[0.08]"
+                  ? "bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm"
+                  : "bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-white"
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
@@ -316,7 +348,7 @@ export const PlaygroundPage: React.FC = () => {
 
         {/* Sample Attack Presets Bar */}
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
-          <span className="text-[11px] font-mono text-zinc-400 shrink-0">Sample Presets:</span>
+          <span className="text-[11px] font-mono text-slate-500 shrink-0">Sample Presets:</span>
           {SAMPLE_PRESETS.map((p, idx) => (
             <button
               key={idx}
@@ -324,7 +356,7 @@ export const PlaygroundPage: React.FC = () => {
                 setText(p.text);
                 setSource(p.source);
               }}
-              className="shrink-0 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-zinc-300 hover:text-white transition-all text-xs"
+              className="shrink-0 px-2.5 py-1 rounded-md bg-[#090D18] hover:bg-slate-800 border border-slate-800/80 text-slate-300 hover:text-white transition-all text-xs font-medium"
             >
               {p.name}
             </button>
@@ -332,10 +364,10 @@ export const PlaygroundPage: React.FC = () => {
         </div>
 
         {/* Configuration Selectors */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-white/[0.06] text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-slate-800/80 text-xs">
           {/* Source Trust Level */}
           <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-1.5">
               Content Source (Trust Boundary)
             </label>
             <div className="grid grid-cols-2 gap-1.5">
@@ -345,15 +377,15 @@ export const PlaygroundPage: React.FC = () => {
                   onClick={() => setSource(s)}
                   className={`px-2 py-1.5 rounded-lg font-mono text-[11px] font-medium border text-center transition-all ${
                     source === s
-                      ? "bg-blue-600 text-white border-blue-500"
-                      : "bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:bg-white/[0.06]"
+                      ? "bg-indigo-600 text-white border-indigo-500 shadow-sm"
+                      : "bg-[#090D18] text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200"
                   }`}
                 >
                   {s}
                 </button>
               ))}
             </div>
-            <div className="text-[10px] text-zinc-400 mt-1">
+            <div className="text-[10px] text-slate-500 mt-1">
               {source === "retrieved" || source === "tool_output"
                 ? "Indirect injection mode: Suspicion escalated on instruction imperatives."
                 : "Standard user prompt inspection mode."}
@@ -362,39 +394,39 @@ export const PlaygroundPage: React.FC = () => {
 
           {/* Primary Policy Preset */}
           <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-1.5">
               Primary Policy Preset
             </label>
             <select
               value={primaryPolicy}
               onChange={(e) => setPrimaryPolicy(e.target.value)}
-              className="w-full bg-[#0E131F] border border-white/[0.1] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+              className="w-full bg-[#090D18] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
             >
               <option value="strict">Strict (Threshold 0.50 - Zero Tolerance)</option>
               <option value="balanced">Balanced (Threshold 0.70 - Recommended)</option>
               <option value="lenient">Lenient (Threshold 0.85 - Maximum Recall)</option>
             </select>
-            <div className="text-[10px] text-zinc-400 mt-1">Configures block/warn risk thresholds.</div>
+            <div className="text-[10px] text-slate-500 mt-1">Configures block/warn risk thresholds.</div>
           </div>
 
           {/* Secondary Policy Preset (for Compare mode) */}
           <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-1.5">
               {compareMode ? "Comparison Policy Preset" : "File Upload"}
             </label>
             {compareMode ? (
               <select
                 value={comparePolicy}
                 onChange={(e) => setComparePolicy(e.target.value)}
-                className="w-full bg-[#0E131F] border border-white/[0.1] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                className="w-full bg-[#090D18] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
               >
                 <option value="strict">Strict (Threshold 0.50)</option>
                 <option value="balanced">Balanced (Threshold 0.70)</option>
                 <option value="lenient">Lenient (Threshold 0.85)</option>
               </select>
             ) : (
-              <label className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] cursor-pointer text-zinc-300 transition-all">
-                <Upload className="w-3.5 h-3.5 text-zinc-400" />
+              <label className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg bg-[#090D18] hover:bg-slate-800 border border-slate-800 cursor-pointer text-slate-300 hover:text-white transition-all">
+                <Upload className="w-3.5 h-3.5 text-slate-400" />
                 <span className="text-xs">Upload Document / Text File</span>
                 <input
                   type="file"
@@ -414,27 +446,27 @@ export const PlaygroundPage: React.FC = () => {
             onChange={(e) => setText(e.target.value)}
             rows={6}
             placeholder="Enter untrusted prompt text, system directive, or retrieved RAG document chunk..."
-            className="w-full bg-[#0A0D14] border border-white/[0.1] rounded-xl p-3.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500 placeholder-zinc-600 resize-y"
+            className="w-full bg-[#090D18] border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 placeholder-slate-600 resize-y leading-relaxed"
           />
         </div>
 
         {/* Action Button Bar */}
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-mono text-zinc-400">
+          <span className="text-[11px] font-mono text-slate-500">
             {text.length} characters &bull; ~{Math.ceil(text.length / 4)} tokens
           </span>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setText("")}
-              className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
             >
               Clear
             </button>
             <button
               onClick={handleScan}
               disabled={loading || !text.trim()}
-              className="flex items-center space-x-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md"
+              className="flex items-center space-x-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{loading ? "Analyzing Pipeline..." : "Execute Gateway Scan"}</span>
@@ -443,7 +475,7 @@ export const PlaygroundPage: React.FC = () => {
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -453,7 +485,7 @@ export const PlaygroundPage: React.FC = () => {
       {/* Results View */}
       {primaryResult && (
         <div className="space-y-4">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+          <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
             Inspection Results
           </h3>
 
