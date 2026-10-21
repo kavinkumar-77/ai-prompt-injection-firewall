@@ -26,6 +26,16 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 BACKEND_PORT = 8000
 DASHBOARD_PORT = 5173
 
+# Ensure UTF-8 output encoding across Windows consoles
+if sys.platform == "win32":
+    try:
+        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 class Colors:
     GREEN = "\033[92m"
@@ -189,7 +199,7 @@ def dev_up() -> int:
     print(f"\n{Colors.BOLD}[*] Launching Project AEGIS Services...{Colors.RESET}")
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(ROOT_DIR / "backend")
+    env["PYTHONPATH"] = f"{ROOT_DIR / 'backend'}{os.pathsep}{ROOT_DIR}"
     py_exe = get_python_exe()
 
     # 1. Start Backend Gateway

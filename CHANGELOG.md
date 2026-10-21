@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-10-20
 
 ### Fixed
+- **Runtime Packaging & Windows Console Encoding**: Moved demo seed logic into `backend/app/storage/demo_seed.py` to eliminate external `scripts` module dependency in FastAPI routes. Configured `sys.path` initialization in `backend/app/__init__.py` and `PYTHONPATH` in `scripts/dev_up.py` and Dockerfiles. Added resilient Windows UTF-8 stdout/stderr stream reconfiguration in `start_aegis.py` and `scripts/dev_up.py` to prevent `UnicodeEncodeError: 'charmap'` on Windows cp1252 consoles.
 - **Hermetic CI & Test Parity**: Updated `test_classifier_sliding_window` and `test_redteam_in_process_execution` to gracefully verify fallback and degraded pipeline paths in CI environments where large ONNX binary weights are uncommitted (Rule 3/7 compliance). Registered `model` marker in `pyproject.toml`.
 - **Dependabot & PR Hygiene**: Tuned `.github/dependabot.yml` with monthly schedules, PR limits, and semver-major ignores for breaking ecosystem packages. Closed obsolete pull requests (#21, #22) whose contributions were merged into `main` and dismissed unpinned Dependabot PRs (#23–#49).
 

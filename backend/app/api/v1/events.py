@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.database import clear_all_threats, get_recent_threats, get_threat_stats
-from scripts.seed_demo_data import seed_demo_events
+from app.storage.demo_seed import seed_demo_events
 
 router = APIRouter(prefix="/v1/events", tags=["Events"])
 

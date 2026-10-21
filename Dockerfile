@@ -31,10 +31,12 @@ COPY --from=builder /install /usr/local
 COPY --chown=aegis:aegis backend/ /app/backend/
 COPY --chown=aegis:aegis models/ /app/models/
 COPY --chown=aegis:aegis policies/ /app/policies/
+COPY --chown=aegis:aegis lab/ /app/lab/
+COPY --chown=aegis:aegis scripts/ /app/scripts/
 
 RUN mkdir -p /app/data && chown -R aegis:aegis /app/data
 
-ENV PYTHONPATH=/app/backend \
+ENV PYTHONPATH=/app/backend:/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     AEGIS_HOST=0.0.0.0 \
