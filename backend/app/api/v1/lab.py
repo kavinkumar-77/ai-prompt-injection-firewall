@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any, cast
 
 import yaml
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from lab.runner import SCENARIOS_DIR, compare_scenario
@@ -65,6 +67,42 @@ def run_scenario_endpoint(req: RunScenarioRequest) -> dict[str, Any]:
 
     comp_result = compare_scenario(sc_file)
     return comp_result.to_dict()
+
+
+@router.get("/run/stream/{scenario_id}")
+async def stream_scenario_endpoint(scenario_id: str) -> StreamingResponse:
+    """Streams Attack Lab scenario execution step-by-step in real-time via SSE."""
+    sc_file = SCENARIOS_DIR / f"{scenario_id}.yaml"
+    if not sc_file.is_file():
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+
+    comp_result = compare_scenario(sc_file)
+    data = comp_result.to_dict()
+    steps = data.get("execution_steps", [])
+
+    async def event_generator():
+        for i, step in enumerate(steps):
+            is_last = i == len(steps) - 1
+            payload = {
+                "step_index": i,
+                "total_steps": len(steps),
+                "step": step,
+                "is_final": is_last,
+                "result": data if is_last else None,
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
+            if not is_last:
+                await asyncio.sleep(0.4)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/report")

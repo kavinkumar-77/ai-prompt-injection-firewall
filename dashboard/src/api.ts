@@ -121,10 +121,12 @@ export interface ScenarioMeta {
   id: string;
   title: string;
   category: string;
-  owasp_mapping: string;
-  severity: string;
-  target_tool: string;
+  owasp_mapping?: string;
+  severity?: string;
+  target_tool?: string;
   description: string;
+  persona?: string;
+  expected_verdict?: string;
 }
 
 export interface ScenarioTurnTrace {
@@ -151,12 +153,26 @@ export interface ScenarioExecutionSide {
   triggered_layers?: Array<{ layer: string; score: number; label: string }>;
 }
 
+export interface ExecutionStep {
+  step_number: number;
+  phase: "setup" | "dispatch" | "tool_call" | "divergence" | "verdict";
+  title: string;
+  badge: string;
+  status: "completed" | "diverged" | "blocked" | "running";
+  description: string;
+  details?: Record<string, any>;
+  unprotected?: Record<string, any>;
+  protected?: Record<string, any>;
+  logs: string[];
+}
+
 export interface ScenarioComparisonResult {
   scenario_id: string;
   without_aegis: ScenarioExecutionSide;
   with_aegis: ScenarioExecutionSide;
   protection_effective: boolean;
   timestamp: string;
+  execution_steps?: ExecutionStep[];
 }
 
 export interface EvaluationMetrics {
@@ -330,6 +346,55 @@ export const api = {
     });
     if (!res.ok) throw new Error(`Failed to run scenario: ${res.statusText}`);
     return res.json();
+  },
+
+  async streamScenario(
+    scenarioId: string,
+    onStep: (step: ExecutionStep, isFinal: boolean, partialResult?: ScenarioComparisonResult) => void
+  ): Promise<ScenarioComparisonResult> {
+    try {
+      const response = await fetch(`${BASE_URL}/v1/lab/run/stream/${scenarioId}`);
+      if (!response.ok || !response.body) {
+        throw new Error(`SSE stream failed with status ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalResult: ScenarioComparisonResult | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data:")) {
+            try {
+              const payload = JSON.parse(trimmed.slice(5).trim());
+              if (payload.step) {
+                onStep(payload.step, Boolean(payload.is_final), payload.result);
+              }
+              if (payload.result) {
+                finalResult = payload.result;
+              }
+            } catch {
+              // Ignore partial parse failures
+            }
+          }
+        }
+      }
+
+      if (finalResult) return finalResult;
+    } catch (streamErr) {
+      console.warn("Live stream connection failed, falling back to atomic run:", streamErr);
+    }
+
+    // Fallback if SSE reader was unavailable or interrupted
+    return this.runScenario(scenarioId);
   },
 
   async getLabReport(): Promise<LabSummaryReport> {

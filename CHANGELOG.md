@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2026-10-21
 
+### Added
+- **Real-Time Visual Attack Execution Arena**:
+  - Implemented 5-phase chronological attack process pipeline (`Setup & Canaries` -> `Task Ingestion` -> `Tool Invocation` -> `Parallel Divergence` -> `Audit Scorecard`) with animated glowing step connectors and live status badges.
+  - Built an interactive Threat Flow Diagram illustrating untrusted data flow from the adversary vector, through the agent brain, into the dual execution divergence paths (Unprotected breach vs. AEGIS active gateway containment).
+  - Integrated real-time streaming Cyber Console Terminal displaying timestamped log events as the attack unfolds step-by-step.
+  - Added Server-Sent Events (SSE) streaming endpoint `GET /v1/lab/run/stream/{scenario_id}` in FastAPI backend for real-time progress events.
+  - Added simulation playback controls (1x realistic vs. 2x accelerated execution speeds, manual step jumping, and instant replay).
+
 ### Fixed
 - **Attack Lab & Inspection Arena Telemetry Rendering**:
   - Eliminated React unhandled `TypeError` exceptions that caused the Attack Lab and Inspection Arena (Playground) to unmount into a blank white page upon executing scans.

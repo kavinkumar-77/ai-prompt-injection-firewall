@@ -63,6 +63,17 @@ def test_lab_api_run_scenario(client: TestClient):
     assert comp["on_result"]["attack_succeeded"] is False
     assert comp["on_result"]["verdict"] == "block"
     assert comp["defense_effective"] is True
+    assert "execution_steps" in comp
+    assert len(comp["execution_steps"]) == 5
+
+
+def test_lab_api_run_scenario_stream(client: TestClient):
+    with client.stream("GET", "/v1/lab/run/stream/scenario_01_direct_override") as resp:
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers.get("content-type", "")
+        chunks = list(resp.iter_lines())
+        assert any("TARGET INITIALIZED" in chunk for chunk in chunks)
+        assert any("AUDIT VERIFIED" in chunk for chunk in chunks)
 
 
 def test_lab_api_get_report(client: TestClient):
